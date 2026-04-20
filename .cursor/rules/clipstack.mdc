@@ -1,0 +1,46 @@
+---
+description: ClipStack project standards — architecture, concurrency, privacy, and constraints
+alwaysApply: true
+---
+
+# ClipStack Project Rules
+
+## Hard Constraints
+
+- **No network access.** Never add `URLSession`, `URLRequest`, `WKWebView`, `NWConnection`, `CFSocketCreate`, or `import Network`. `scripts/lint-release.sh` enforces this at build time.
+- **No external packages.** No Swift packages, Cocoapods, or Carthage. System frameworks only.
+- **No telemetry, analytics, or crash reporting.**
+- **macOS 13 minimum.** Guard any newer API with `#available(macOS X.X, *)`.
+
+## Architecture
+
+Data flows one way: `ClipboardMonitor` / `ScreenshotWatcher` → `ClipboardStore` → `MenuBarView`.
+
+- `ClipboardStore` is `@MainActor` — all state mutations happen there.
+- `SemanticIndex` is a Swift `actor` — always call with `await`.
+- Prefer `struct`/`enum` (value types) over `class`. Use `@MainActor class` only where AppKit integration requires it.
+
+## Concurrency
+
+- Prefer `async/await` and `actor` over GCD callbacks.
+- Never dispatch UI updates from a background thread. `@MainActor` enforces this on `ClipboardStore` and views.
+
+## Code Style
+
+- Comments explain *why*, not *what*. Don't narrate code.
+- No `// MARK:` unless a file has 5+ distinct logical sections.
+- Keep files under ~300 lines. Split if a file grows larger.
+- Test file mirrors source: `FooBar.swift` → `Tests/FooBarTests.swift`.
+
+## Privacy-First Defaults
+
+- Never log clipboard content, screenshot paths, or semantic index data to the console.
+- Any new persistence must go to `~/Library/Application Support/ClipStack/` with `0600` file permissions.
+- Do not change the `history.json` schema without a migration path.
+
+## Before Suggesting Changes
+
+1. Check `scripts/lint-release.sh` will still pass.
+2. Consider whether a `#available` guard is needed.
+3. If touching security-relevant behavior, update `SECURITY.md`.
+4. Run `./scripts/test.sh` — all tests must pass.
