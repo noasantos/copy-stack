@@ -37,8 +37,7 @@ git push origin main --tags
 ### 5. Verify install
 
 ```bash
-# TODO: replace before public release
-curl -fsSL https://raw.githubusercontent.com/FIXME_ORG/clipstack/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/noasantos/copy-stack/main/install.sh | bash
 ```
 
 - [ ] App launches from /Applications

@@ -5,8 +5,7 @@ ClipStack is a free, local-only clipboard manager for the macOS menu bar.
 ## Install
 
 ```bash
-# TODO: replace before public release
-curl -fsSL https://raw.githubusercontent.com/FIXME_ORG/clipstack/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/noasantos/copy-stack/main/install.sh | bash
 ```
 
 Requirements: macOS 13 (Ventura) or later. Apple Silicon and Intel supported.
@@ -32,8 +31,7 @@ No data leaves your machine. No analytics. No crash reporting. History is stored
 ## Uninstall
 
 ```bash
-# TODO: replace before public release
-curl -fsSL https://raw.githubusercontent.com/FIXME_ORG/clipstack/main/uninstall.sh | bash
+curl -fsSL https://raw.githubusercontent.com/noasantos/copy-stack/main/uninstall.sh | bash
 ```
 
 Or manually:
@@ -53,9 +51,8 @@ ClipStack is not signed with an Apple Developer ID certificate. The installer re
 Requires Xcode 15+ and macOS 13+.
 
 ```bash
-# TODO: replace before public release
-git clone https://github.com/FIXME_ORG/clipstack
-cd clipstack
+git clone https://github.com/noasantos/copy-stack
+cd copy-stack
 xcodebuild -scheme ClipStack -configuration Release \
   ONLY_ACTIVE_ARCH=NO ARCHS="arm64 x86_64" build
 ```
