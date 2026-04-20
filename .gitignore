@@ -1,0 +1,9 @@
+build/
+DerivedData/
+*.xcuserdata/
+.DS_Store
+*.xcarchive
+*.ipa
+*.dSYM
+*.zip
+scripts/ExportOptions.plist
