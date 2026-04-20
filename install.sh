@@ -14,7 +14,7 @@ REPO="noasantos/copy-stack"
 ZIP_NAME="${APP_NAME}-${VERSION}.zip"
 DOWNLOAD_URL="https://github.com/${REPO}/releases/download/v${VERSION}/${ZIP_NAME}"
 # SHA-256 of the release zip — update this on each release
-EXPECTED_SHA256="425accb4cfc75112d53a70e566940f82b2a1410e0fce5ea5dc9ab4970d3be350"
+EXPECTED_SHA256="2897ac5c20e82d36550b501c51ec568d2d3be56623d1c159997a43eadfbb8ee9"
 INSTALL_DIR="/Applications"
 TMP_DIR=$(mktemp -d)
 
