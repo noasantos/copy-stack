@@ -14,7 +14,7 @@ REPO="noasantos/copy-stack"
 ZIP_NAME="${APP_NAME}-${VERSION}.zip"
 DOWNLOAD_URL="https://github.com/${REPO}/releases/download/v${VERSION}/${ZIP_NAME}"
 # SHA-256 of the release zip — update this on each release
-EXPECTED_SHA256="b3db79f45a70978d3a298acf0548951709da587002e6c788d6051e8603068a13"
+EXPECTED_SHA256="425accb4cfc75112d53a70e566940f82b2a1410e0fce5ea5dc9ab4970d3be350"
 INSTALL_DIR="/Applications"
 TMP_DIR=$(mktemp -d)
 
@@ -160,6 +160,11 @@ cat > "${PLIST_PATH}" <<PLIST
 PLIST
 launchctl load "${PLIST_PATH}" 2>/dev/null || true
 success "Launch at login configured"
+
+# ── Launch app immediately ────────────────────────────────────
+info "Launching ClipStack..."
+open -a ClipStack 2>/dev/null || open "${APP_DEST}" || true
+success "ClipStack launched — look for the clipboard icon in your menu bar"
 
 # ── Done ──────────────────────────────────────────────────────
 echo ""

@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		600000000000000000000001 /* ClipStackApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500000000000000000000001 /* ClipStackApp.swift */; };
 		600000000000000000000002 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500000000000000000000002 /* AppDelegate.swift */; };
+		600000000000000000000020 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 500000000000000000000020 /* Assets.xcassets */; };
 		600000000000000000000003 /* ClipboardMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500000000000000000000003 /* ClipboardMonitor.swift */; };
 		600000000000000000000004 /* ScreenshotWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500000000000000000000004 /* ScreenshotWatcher.swift */; };
 		600000000000000000000005 /* ClipboardStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500000000000000000000005 /* ClipboardStore.swift */; };
@@ -33,6 +34,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		500000000000000000000020 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		500000000000000000000001 /* ClipStackApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipStackApp.swift; sourceTree = "<group>"; };
 		500000000000000000000002 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		500000000000000000000003 /* ClipboardMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardMonitor.swift; sourceTree = "<group>"; };
@@ -81,6 +83,7 @@
 		000000000000000000000002 /* ClipStack */ = {
 			isa = PBXGroup;
 			children = (
+				500000000000000000000020 /* Assets.xcassets */,
 				500000000000000000000001 /* ClipStackApp.swift */,
 				500000000000000000000002 /* AppDelegate.swift */,
 				500000000000000000000003 /* ClipboardMonitor.swift */,
@@ -196,6 +199,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				600000000000000000000020 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -376,6 +380,7 @@
 		320000000000000000000001 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = "";
@@ -397,6 +402,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "arm64 x86_64";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				CODE_SIGNING_ALLOWED = YES;
