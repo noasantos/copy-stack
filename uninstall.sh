@@ -16,6 +16,12 @@ else
   echo "  ⚠ /Applications/${APP_NAME}.app not found — skipping"
 fi
 
+echo "  → Removing launch at login..."
+PLIST_PATH="${HOME}/Library/LaunchAgents/com.clipstack.app.plist"
+launchctl unload "${PLIST_PATH}" 2>/dev/null || true
+rm -f "${PLIST_PATH}" 2>/dev/null && \
+  echo "  ✓ Removed launch agent" || true
+
 echo "  → Removing application data..."
 rm -rf ~/Library/Application\ Support/ClipStack 2>/dev/null && \
   echo "  ✓ Removed ~/Library/Application Support/ClipStack" || true

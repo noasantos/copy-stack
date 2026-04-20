@@ -132,6 +132,35 @@ codesign --verify --deep "${APP_DEST}" 2>/dev/null && \
   success "Signature valid" || \
   warn "Signature verification skipped (Xcode CLI tools may not be installed)"
 
+# ── Launch at Login (LaunchAgent) ─────────────────────────────
+LAUNCH_AGENTS_DIR="${HOME}/Library/LaunchAgents"
+PLIST_PATH="${LAUNCH_AGENTS_DIR}/com.clipstack.app.plist"
+
+info "Configuring launch at login..."
+mkdir -p "${LAUNCH_AGENTS_DIR}"
+cat > "${PLIST_PATH}" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.clipstack.app</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Applications/ClipStack.app/Contents/MacOS/ClipStack</string>
+    </array>
+    <key>RunAtLoad</key>
+    <false/>
+    <key>KeepAlive</key>
+    <false/>
+    <key>LimitLoadToSessionType</key>
+    <string>Aqua</string>
+</dict>
+</plist>
+PLIST
+launchctl load "${PLIST_PATH}" 2>/dev/null || true
+success "Launch at login configured"
+
 # ── Done ──────────────────────────────────────────────────────
 echo ""
 echo "  ✓ ClipStack ${VERSION} installed successfully"

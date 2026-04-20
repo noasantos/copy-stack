@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import ServiceManagement
 import SwiftUI
 import UserNotifications
 
@@ -19,6 +20,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         NSApp.setActivationPolicy(.accessory)
         requestNotificationPermission()
+        registerLoginItem()
         configureStatusItem()
 
         let clipboardMonitor = ClipboardMonitor(store: store)
@@ -37,6 +39,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func requestNotificationPermission() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert]) { _, _ in }
+    }
+
+    private func registerLoginItem() {
+        let service = SMAppService.mainApp
+        guard service.status == .notRegistered else { return }
+        try? service.register()
     }
 
     private func configureStatusItem() {
