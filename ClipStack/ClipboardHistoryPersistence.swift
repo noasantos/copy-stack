@@ -32,10 +32,16 @@ struct ClipboardHistoryPersistence: ClipboardHistoryPersisting {
         let text: String?
         let imageData: Data?
         let imageEncoding: ImageEncoding?
+        let imageFileName: String?
     }
+
+    private static let currentHistoryVersion = 2
 
     private let fileURL: URL
     private let fileManager: FileManager
+    private var imageDirectoryURL: URL {
+        fileURL.deletingLastPathComponent().appendingPathComponent("Images", isDirectory: true)
+    }
 
     init(fileURL: URL, fileManager: FileManager = .default) {
         self.fileURL = fileURL
@@ -62,7 +68,7 @@ struct ClipboardHistoryPersistence: ClipboardHistoryPersisting {
             let decoder = JSONDecoder()
             decoder.dateDecodingStrategy = .iso8601
             let history = try decoder.decode(StoredHistory.self, from: data)
-            return migrate(from: history).compactMap(Self.makeClipboardItem(from:))
+            return migrate(from: history).compactMap(makeClipboardItem(from:))
         } catch {
             logger.error("ClipStack failed to load clipboard history: \(error, privacy: .private)")
             return []
@@ -70,15 +76,19 @@ struct ClipboardHistoryPersistence: ClipboardHistoryPersisting {
     }
 
     func saveItems(_ items: [ClipboardItem]) {
-        let storedItems = items.compactMap(Self.makeStoredItem(from:))
-        let history = StoredHistory(version: 1, items: storedItems)
-
         do {
             try fileManager.createDirectory(
                 at: fileURL.deletingLastPathComponent(),
                 withIntermediateDirectories: true
             )
+            try fileManager.createDirectory(
+                at: imageDirectoryURL,
+                withIntermediateDirectories: true
+            )
             setOwnerOnlyDirectoryPermissions()
+
+            let storedItems = items.compactMap(makeStoredItem(from:))
+            let history = StoredHistory(version: Self.currentHistoryVersion, items: storedItems)
 
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601
@@ -86,6 +96,7 @@ struct ClipboardHistoryPersistence: ClipboardHistoryPersisting {
             let data = try encoder.encode(history)
             try data.write(to: fileURL, options: [.atomic])
             setOwnerOnlyFilePermissions()
+            removeOrphanedImageFiles(keeping: Set(storedItems.compactMap(\.imageFileName)))
         } catch {
             logger.error("ClipStack failed to save clipboard history: \(error, privacy: .private)")
         }
@@ -93,7 +104,7 @@ struct ClipboardHistoryPersistence: ClipboardHistoryPersisting {
 
     private func migrate(from history: StoredHistory) -> [StoredItem] {
         switch history.version {
-        case 1:
+        case 1, Self.currentHistoryVersion:
             return history.items
         case ..<1:
             backupHistoryFile()
@@ -126,6 +137,12 @@ struct ClipboardHistoryPersistence: ClipboardHistoryPersisting {
                 [.posixPermissions: 0o700],
                 ofItemAtPath: fileURL.deletingLastPathComponent().path
             )
+            if fileManager.fileExists(atPath: imageDirectoryURL.path) {
+                try fileManager.setAttributes(
+                    [.posixPermissions: 0o700],
+                    ofItemAtPath: imageDirectoryURL.path
+                )
+            }
         } catch {
             logger.warning("ClipStack failed to restrict clipboard history directory permissions: \(error, privacy: .private)")
         }
@@ -142,7 +159,32 @@ struct ClipboardHistoryPersistence: ClipboardHistoryPersisting {
         }
     }
 
-    private static func makeClipboardItem(from storedItem: StoredItem) -> ClipboardItem? {
+    private func setOwnerOnlyImageFilePermissions(_ url: URL) {
+        do {
+            try fileManager.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
+        } catch {
+            logger.warning("ClipStack failed to restrict clipboard image file permissions: \(error, privacy: .private)")
+        }
+    }
+
+    private func removeOrphanedImageFiles(keeping fileNames: Set<String>) {
+        guard let urls = try? fileManager.contentsOfDirectory(
+            at: imageDirectoryURL,
+            includingPropertiesForKeys: nil
+        ) else {
+            return
+        }
+
+        for url in urls where !fileNames.contains(url.lastPathComponent) {
+            do {
+                try fileManager.removeItem(at: url)
+            } catch {
+                logger.warning("ClipStack failed to remove orphaned clipboard image file: \(error, privacy: .private)")
+            }
+        }
+    }
+
+    private func makeClipboardItem(from storedItem: StoredItem) -> ClipboardItem? {
         switch storedItem.kind {
         case .text:
             guard let text = storedItem.text else {
@@ -150,14 +192,23 @@ struct ClipboardHistoryPersistence: ClipboardHistoryPersisting {
             }
             return .text(text, id: storedItem.id, timestamp: storedItem.timestamp)
         case .image:
-            guard let imageData = storedItem.imageData, let image = NSImage(data: imageData) else {
+            if let imageFileName = storedItem.imageFileName,
+               let image = ClipboardImage.make(fileURL: imageDirectoryURL.appendingPathComponent(imageFileName)) {
+                return .image(image, id: storedItem.id, timestamp: storedItem.timestamp)
+            }
+
+            guard let imageData = storedItem.imageData,
+                  let image = ClipboardImage.make(
+                    data: imageData,
+                    encoding: storedItem.imageEncoding.map(\.clipboardImageEncoding)
+                  ) else {
                 return nil
             }
             return .image(image, id: storedItem.id, timestamp: storedItem.timestamp)
         }
     }
 
-    private static func makeStoredItem(from item: ClipboardItem) -> StoredItem? {
+    private func makeStoredItem(from item: ClipboardItem) -> StoredItem? {
         switch item {
         case .text(let text, id: let id, timestamp: let timestamp):
             return StoredItem(
@@ -166,10 +217,11 @@ struct ClipboardHistoryPersistence: ClipboardHistoryPersisting {
                 timestamp: timestamp,
                 text: text,
                 imageData: nil,
-                imageEncoding: nil
+                imageEncoding: nil,
+                imageFileName: nil
             )
         case .image(let image, id: let id, timestamp: let timestamp):
-            guard let encodedImage = image.persistentImageData() else {
+            guard let fileName = persistImagePayload(image, id: id) else {
                 return nil
             }
 
@@ -178,24 +230,48 @@ struct ClipboardHistoryPersistence: ClipboardHistoryPersisting {
                 id: id,
                 timestamp: timestamp,
                 text: nil,
-                imageData: encodedImage.data,
-                imageEncoding: encodedImage.encoding
+                imageData: nil,
+                imageEncoding: image.encoding.map(Self.StoredItem.ImageEncoding.init),
+                imageFileName: fileName
             )
+        }
+    }
+
+    private func persistImagePayload(_ image: ClipboardImage, id: UUID) -> String? {
+        guard let data = image.payloadData() else {
+            return nil
+        }
+
+        let fileName = "\(id.uuidString).\(image.encoding?.rawValue ?? "png")"
+        let targetURL = imageDirectoryURL.appendingPathComponent(fileName)
+
+        do {
+            try data.write(to: targetURL, options: [.atomic])
+            setOwnerOnlyImageFilePermissions(targetURL)
+            return fileName
+        } catch {
+            logger.warning("ClipStack failed to save clipboard image payload: \(error, privacy: .private)")
+            return nil
         }
     }
 }
 
-private extension NSImage {
-    func persistentImageData() -> (data: Data, encoding: ClipboardHistoryPersistence.StoredItem.ImageEncoding)? {
-        guard let tiffData = tiffRepresentation else {
-            return nil
+private extension ClipboardHistoryPersistence.StoredItem.ImageEncoding {
+    init(_ encoding: ClipboardImageEncoding) {
+        switch encoding {
+        case .png:
+            self = .png
+        case .tiff:
+            self = .tiff
         }
+    }
 
-        if let bitmap = NSBitmapImageRep(data: tiffData),
-           let pngData = bitmap.representation(using: .png, properties: [:]) {
-            return (pngData, .png)
+    var clipboardImageEncoding: ClipboardImageEncoding {
+        switch self {
+        case .png:
+            return .png
+        case .tiff:
+            return .tiff
         }
-
-        return (tiffData, .tiff)
     }
 }

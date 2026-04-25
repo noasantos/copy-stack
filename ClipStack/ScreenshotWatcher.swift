@@ -16,7 +16,7 @@ final class ScreenshotWatcher {
     }
 
     private enum ScreenshotLoadResult: Sendable {
-        case loaded(Data)
+        case loaded(ClipboardImage)
         case skipped
         case failed
     }
@@ -151,17 +151,12 @@ final class ScreenshotWatcher {
         let store = store
 
         return Task { @MainActor [store, url] in
-            let loadResult = await Self.loadScreenshotDataIfSafe(at: url)
+            let loadResult = await Self.loadScreenshotIfSafe(at: url)
 
-            guard case .loaded(let data) = loadResult else {
+            guard case .loaded(let image) = loadResult else {
                 if case .failed = loadResult {
                     logger.warning("ClipStack failed to load screenshot image")
                 }
-                return
-            }
-
-            guard let image = NSImage(data: data) else {
-                logger.warning("ClipStack failed to load screenshot image")
                 return
             }
 
@@ -170,17 +165,17 @@ final class ScreenshotWatcher {
         }
     }
 
-    private static func loadScreenshotDataIfSafe(at url: URL) async -> ScreenshotLoadResult {
+    private static func loadScreenshotIfSafe(at url: URL) async -> ScreenshotLoadResult {
         await Task.detached {
             guard Self.isSafeScreenshotFile(at: url) else {
                 return .skipped
             }
 
-            guard let data = try? Data(contentsOf: url) else {
+            guard let image = ClipboardImage.make(fileURL: url) else {
                 return .failed
             }
 
-            return .loaded(data)
+            return .loaded(image)
         }.value
     }
 

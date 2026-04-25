@@ -51,7 +51,7 @@ final class ClipboardMonitor {
             return
         }
 
-        if let image = NSImage(pasteboard: pasteboard) {
+        if let image = ClipboardImage.make(pasteboard: pasteboard) {
             store.add(.image(image))
         }
     }

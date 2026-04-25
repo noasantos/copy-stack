@@ -99,7 +99,7 @@ final class ClipboardStore: ObservableObject {
         writeToPasteboard(item)
     }
 
-    func copyScreenshotImageToPasteboardAndHistory(_ image: NSImage) {
+    func copyScreenshotImageToPasteboardAndHistory(_ image: ClipboardImage) {
         let item = ClipboardItem.image(image)
         writeToPasteboard(item)
         add(item)
@@ -113,7 +113,7 @@ final class ClipboardStore: ObservableObject {
         case .text(let text, id: _, timestamp: _):
             pasteboard.setString(text, forType: .string)
         case .image(let image, id: _, timestamp: _):
-            pasteboard.writeObjects([image])
+            _ = image.write(to: pasteboard)
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in

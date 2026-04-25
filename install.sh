@@ -8,13 +8,25 @@ set -euo pipefail
 # Source: https://github.com/noasantos/copy-stack
 # ──────────────────────────────────────────────────────────────
 
-VERSION="0.1.0"   # ← Update this on each release
+LATEST_VERSION="0.1.1"   # ← Update this on each release
+VERSION="${CLIPSTACK_VERSION:-${1:-${LATEST_VERSION}}}"
 APP_NAME="ClipStack"
 REPO="noasantos/copy-stack"
 ZIP_NAME="${APP_NAME}-${VERSION}.zip"
 DOWNLOAD_URL="https://github.com/${REPO}/releases/download/v${VERSION}/${ZIP_NAME}"
-# SHA-256 of the release zip — update this on each release
-EXPECTED_SHA256="4d4e5717267d0c63bb58e24f4619dcbc7fb7fa4944f1ab62f16affa632f0cded"
+case "${VERSION}" in
+  0.1.0)
+    EXPECTED_SHA256="4d4e5717267d0c63bb58e24f4619dcbc7fb7fa4944f1ab62f16affa632f0cded"
+    ;;
+  0.1.1)
+    EXPECTED_SHA256="2ed4b3f51d8bec88cd2df652be21f07e17c20de8814bc44ec45fc9f1d9670fb3"
+    ;;
+  *)
+    echo "  ✗ ERROR: Unsupported ClipStack version: ${VERSION}" >&2
+    echo "  Supported versions: 0.1.0, 0.1.1" >&2
+    exit 1
+    ;;
+esac
 INSTALL_DIR="/Applications"
 TMP_DIR=$(mktemp -d)
 

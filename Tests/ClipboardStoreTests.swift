@@ -168,7 +168,7 @@ final class ClipboardStoreTests: XCTestCase {
         let store = ClipboardStore()
         let image = NSImage.onePixelTestImage()
 
-        store.add(.image(image))
+        store.add(.image(ClipboardImage(image)))
 
         XCTAssertEqual(store.items.count, 1)
         if case .image = store.items[0] {
@@ -198,6 +198,66 @@ final class ClipboardStoreTests: XCTestCase {
         let reloadedStore = ClipboardStore(persistence: persistence)
         XCTAssertEqual(reloadedStore.items.count, 1)
         XCTAssertNotNil(reloadedStore.items[0].imageValue)
+    }
+
+    func testPersistentImageHistoryStoresPayloadOutsideJSON() throws {
+        let directoryURL = try makeTemporaryDirectory()
+        let fileURL = directoryURL.appendingPathComponent("history.json")
+        let persistence = ClipboardHistoryPersistence(fileURL: fileURL)
+
+        persistence.saveItems([.image(.onePixelTestImage())])
+
+        let historyData = try Data(contentsOf: fileURL)
+        let historyText = String(decoding: historyData, as: UTF8.self)
+        let imageFiles = try FileManager.default.contentsOfDirectory(
+            at: directoryURL.appendingPathComponent("Images", isDirectory: true),
+            includingPropertiesForKeys: nil
+        )
+
+        XCTAssertTrue(historyText.contains("\"version\" : 2"))
+        XCTAssertTrue(historyText.contains("\"imageFileName\""))
+        XCTAssertFalse(historyText.contains("\"imageData\""))
+        XCTAssertEqual(imageFiles.count, 1)
+    }
+
+    func testPersistentImageHistoryLoadsLegacyInlineImageData() throws {
+        let directoryURL = try makeTemporaryDirectory()
+        let fileURL = directoryURL.appendingPathComponent("history.json")
+        let imageData = try XCTUnwrap(NSImage.onePixelTestImage().tiffRepresentation)
+        let itemID = UUID()
+        let timestamp = "2026-04-25T12:00:00Z"
+        let legacyJSON = """
+        {
+          "version": 1,
+          "items": [
+            {
+              "kind": "image",
+              "id": "\(itemID.uuidString)",
+              "timestamp": "\(timestamp)",
+              "imageData": "\(imageData.base64EncodedString())",
+              "imageEncoding": "tiff"
+            }
+          ]
+        }
+        """
+        try legacyJSON.data(using: .utf8)!.write(to: fileURL)
+        let persistence = ClipboardHistoryPersistence(fileURL: fileURL)
+
+        let loadedItems = persistence.loadItems()
+        persistence.saveItems(loadedItems)
+
+        let migratedHistory = String(decoding: try Data(contentsOf: fileURL), as: UTF8.self)
+        let imageFiles = try FileManager.default.contentsOfDirectory(
+            at: directoryURL.appendingPathComponent("Images", isDirectory: true),
+            includingPropertiesForKeys: nil
+        )
+
+        XCTAssertEqual(loadedItems.count, 1)
+        XCTAssertNotNil(loadedItems[0].imageValue)
+        XCTAssertTrue(migratedHistory.contains("\"version\" : 2"))
+        XCTAssertTrue(migratedHistory.contains("\"imageFileName\""))
+        XCTAssertFalse(migratedHistory.contains("\"imageData\""))
+        XCTAssertEqual(imageFiles.count, 1)
     }
 
     func testClearPersistsEmptyHistory() throws {
@@ -271,16 +331,21 @@ final class ClipboardStoreTests: XCTestCase {
     }
 
     private func makeTemporaryPersistence() throws -> ClipboardHistoryPersistence {
+        let directoryURL = try makeTemporaryDirectory()
+
+        return ClipboardHistoryPersistence(fileURL: directoryURL.appendingPathComponent("history.json"))
+    }
+
+    private func makeTemporaryDirectory() throws -> URL {
         let directoryURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("ClipStackTests", isDirectory: true)
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
-
         try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
         addTeardownBlock {
             try? FileManager.default.removeItem(at: directoryURL)
         }
 
-        return ClipboardHistoryPersistence(fileURL: directoryURL.appendingPathComponent("history.json"))
+        return directoryURL
     }
 }
 
@@ -315,5 +380,11 @@ extension NSImage {
         NSRect(x: 0, y: 0, width: 1, height: 1).fill()
         image.unlockFocus()
         return image
+    }
+}
+
+extension ClipboardImage {
+    static func onePixelTestImage(color: NSColor = .black) -> ClipboardImage {
+        ClipboardImage(NSImage.onePixelTestImage(color: color))
     }
 }

@@ -4,11 +4,27 @@ ClipStack is a free, local-only clipboard manager for the macOS menu bar.
 
 ## Install
 
+By default, the installer installs the latest supported ClipStack release.
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/noasantos/copy-stack/main/install.sh | bash
 ```
 
 Requirements: macOS 13 (Ventura) or later. Apple Silicon and Intel supported.
+
+Pass a version only when you want a specific release instead of latest:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/noasantos/copy-stack/main/install.sh | bash -s -- 0.1.0
+```
+
+## Update
+
+Run the installer again. It removes the previous app bundle and installs the latest release.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/noasantos/copy-stack/main/install.sh | bash
+```
 
 ## What it does
 
