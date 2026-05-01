@@ -6,6 +6,24 @@ import ImageIO
 enum ClipboardImageEncoding: String, Codable, Sendable {
     case png
     case tiff
+    case jpeg
+    case gif
+    case heic
+
+    var pasteboardType: NSPasteboard.PasteboardType {
+        switch self {
+        case .png:
+            return .png
+        case .tiff:
+            return .tiff
+        case .jpeg:
+            return NSPasteboard.PasteboardType("public.jpeg")
+        case .gif:
+            return NSPasteboard.PasteboardType("com.compuserve.gif")
+        case .heic:
+            return NSPasteboard.PasteboardType("public.heic")
+        }
+    }
 }
 
 struct ClipboardImage: @unchecked Sendable {
@@ -95,11 +113,14 @@ struct ClipboardImage: @unchecked Sendable {
 
     @MainActor
     static func make(pasteboard: NSPasteboard) -> ClipboardImage? {
-        if let data = pasteboard.data(forType: .png), let image = make(data: data, encoding: .png) {
-            return image
+        for encoding in preferredPasteboardEncodings {
+            if let data = pasteboard.data(forType: encoding.pasteboardType),
+               let image = make(data: data, encoding: encoding) {
+                return image
+            }
         }
 
-        if let data = pasteboard.data(forType: .tiff), let image = make(data: data, encoding: .tiff) {
+        if let image = makeImageFromFileURL(on: pasteboard) {
             return image
         }
 
@@ -124,12 +145,16 @@ struct ClipboardImage: @unchecked Sendable {
 
     func write(to pasteboard: NSPasteboard) -> Bool {
         if let data = payloadData() {
-            switch encoding ?? Self.encoding(for: data) ?? .png {
-            case .png:
-                return pasteboard.setData(data, forType: .png)
-            case .tiff:
-                return pasteboard.setData(data, forType: .tiff)
+            let payloadEncoding = encoding ?? Self.encoding(for: data) ?? .png
+            let wrotePrimary = pasteboard.setData(data, forType: payloadEncoding.pasteboardType)
+
+            guard payloadEncoding != .tiff,
+                  let tiffData = Self.tiffData(from: data) else {
+                return wrotePrimary
             }
+
+            let wroteFallback = pasteboard.setData(tiffData, forType: .tiff)
+            return wrotePrimary || wroteFallback
         }
 
         return pasteboard.writeObjects([preview])
@@ -178,6 +203,38 @@ struct ClipboardImage: @unchecked Sendable {
         )
     }
 
+    @MainActor
+    private static func makeImageFromFileURL(on pasteboard: NSPasteboard) -> ClipboardImage? {
+        let options: [NSPasteboard.ReadingOptionKey: Any] = [
+            .urlReadingFileURLsOnly: true
+        ]
+
+        guard let objects = pasteboard.readObjects(forClasses: [NSURL.self], options: options) else {
+            return nil
+        }
+
+        for object in objects {
+            let url: URL?
+            if let objectURL = object as? URL {
+                url = objectURL
+            } else if let objectURL = object as? NSURL {
+                url = objectURL as URL
+            } else {
+                url = nil
+            }
+
+            guard let url else {
+                continue
+            }
+
+            if let image = make(fileURL: url) {
+                return image
+            }
+        }
+
+        return nil
+    }
+
     private static func fingerprint(for data: Data) -> String {
         SHA256.hash(data: data).compactMap { String(format: "%02x", $0) }.joined()
     }
@@ -199,7 +256,44 @@ struct ClipboardImage: @unchecked Sendable {
             return .tiff
         }
 
+        if data.starts(with: [0xFF, 0xD8, 0xFF]) {
+            return .jpeg
+        }
+
+        if data.starts(with: [0x47, 0x49, 0x46, 0x38]) {
+            return .gif
+        }
+
+        if isHEICData(data) {
+            return .heic
+        }
+
         return nil
+    }
+
+    private static var preferredPasteboardEncodings: [ClipboardImageEncoding] {
+        [.png, .jpeg, .heic, .gif, .tiff]
+    }
+
+    private static func tiffData(from data: Data) -> Data? {
+        NSImage(data: data)?.tiffRepresentation
+    }
+
+    private static func isHEICData(_ data: Data) -> Bool {
+        guard data.count >= 12,
+              data.subdata(in: 4..<8) == Data("ftyp".utf8) else {
+            return false
+        }
+
+        let brand = data.subdata(in: 8..<12)
+        return [
+            Data("heic".utf8),
+            Data("heix".utf8),
+            Data("hevc".utf8),
+            Data("hevx".utf8),
+            Data("mif1".utf8),
+            Data("msf1".utf8)
+        ].contains(brand)
     }
 }
 
@@ -282,7 +376,7 @@ private extension NSImage {
     }
 
     func bestAvailableData() -> Data? {
-        pngData() ?? tiffRepresentation
+        tiffRepresentation ?? pngData()
     }
 
     func pngData() -> Data? {

@@ -7,9 +7,11 @@ import UserNotifications
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     lazy var store = ClipboardStore(persistence: ClipboardHistoryPersistence.applicationSupport())
+    lazy var downloadsStore = DownloadsStore()
 
     private var clipboardMonitor: ClipboardMonitor?
     private var screenshotWatcher: ScreenshotWatcher?
+    private var downloadsWatcher: DownloadsWatcher?
     private var statusItem: NSStatusItem?
     private var popover: NSPopover?
 
@@ -30,11 +32,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let screenshotWatcher = ScreenshotWatcher(store: store)
         screenshotWatcher.start()
         self.screenshotWatcher = screenshotWatcher
+
+        let downloadsWatcher = DownloadsWatcher(store: downloadsStore)
+        downloadsWatcher.start()
+        self.downloadsWatcher = downloadsWatcher
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         clipboardMonitor?.stop()
         screenshotWatcher?.stop()
+        downloadsWatcher?.stop()
     }
 
     private func requestNotificationPermission() {
@@ -70,7 +77,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let popover = NSPopover()
         popover.behavior = .transient
         popover.contentSize = NSSize(width: 380, height: 560)
-        popover.contentViewController = ClearHostingController(rootView: MenuBarView(store: store))
+        popover.contentViewController = ClearHostingController(rootView: MenuBarView(store: store, downloadsStore: downloadsStore))
         self.popover = popover
     }
 

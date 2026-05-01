@@ -6,7 +6,8 @@
 
 - [ ] Set `MARKETING_VERSION` in Xcode to the new version (e.g. 0.2.0)
 - [ ] Update `CHANGELOG.md` with new version entry
-- [ ] Update `VERSION` variable in `install.sh`
+- [ ] Update `LATEST_VERSION` in `install.sh`
+- [ ] Add a new version case and SHA-256 to `install.sh`; do not remove older supported version cases.
 
 ### 2. Build
 
@@ -30,7 +31,8 @@ git push origin main --tags
 
 ### 4. Update install.sh SHA-256
 
-- [ ] Replace `EXPECTED_SHA256` in `install.sh` with the SHA-256 from build.sh output
+- [ ] Add the new `EXPECTED_SHA256` in `install.sh` with the SHA-256 from build.sh output
+- [ ] Keep previous version SHA-256 cases so older releases remain installable with `bash -s -- <version>`
 - [ ] Commit: `git commit -am "chore: update installer sha256 for v0.2.0"`
 - [ ] Push: `git push origin main`
 

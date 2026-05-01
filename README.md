@@ -18,6 +18,8 @@ Pass a version only when you want a specific release instead of latest:
 curl -fsSL https://raw.githubusercontent.com/noasantos/copy-stack/main/install.sh | bash -s -- 0.1.0
 ```
 
+Supported release versions remain installable by passing the version explicitly. Current supported versions are `0.1.0`, `0.1.1`, and `0.2.0`.
+
 ## Update
 
 Run the installer again. It removes the previous app bundle and installs the latest release.
@@ -30,6 +32,7 @@ curl -fsSL https://raw.githubusercontent.com/noasantos/copy-stack/main/install.s
 
 - Monitors clipboard for text and images
 - Auto-copies screenshots
+- Shows recent top-level Downloads files in an ephemeral tray for dragging into other apps
 - Stores local clipboard history
 - Restore any previous clipboard item from the menu bar
 - No network access. No cloud sync. No account. No telemetry.
@@ -43,6 +46,8 @@ ClipStack stores clipboard history exclusively in:
 ```
 
 No data leaves your machine. No analytics. No crash reporting. History is stored unencrypted in this release (MVP). Do not store sensitive secrets in clipboard history if this concerns you.
+
+The Downloads tray stores no history and does not copy files into ClipStack storage. It only keeps recent file references in memory for the current app session.
 
 ## Uninstall
 

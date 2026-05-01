@@ -6,6 +6,7 @@ import Foundation
 final class ClipboardStore: ObservableObject {
     nonisolated static let defaultMaxItems = 1_000
     nonisolated static let defaultMaxImageItems = 25
+    nonisolated static let defaultRetentionInterval: TimeInterval = 7 * 24 * 60 * 60
 
     @Published private(set) var items: [ClipboardItem] = []
     @Published private(set) var searchResults: [ClipboardItem] = []
@@ -18,9 +19,12 @@ final class ClipboardStore: ObservableObject {
     private let pasteboard: NSPasteboard
     private let maxItems: Int
     private let maxImageItems: Int
+    private let retentionInterval: TimeInterval
+    private let currentDate: () -> Date
     private let persistence: ClipboardHistoryPersisting?
     private let semanticIndex: any SemanticIndexing
     private var searchTask: Task<Void, Never>?
+    private var cleanupTask: Task<Void, Never>?
 
     var isSelfWriting = false
 
@@ -29,18 +33,39 @@ final class ClipboardStore: ObservableObject {
         maxImageItems: Int = ClipboardStore.defaultMaxImageItems,
         pasteboard: NSPasteboard = .general,
         persistence: ClipboardHistoryPersisting? = nil,
-        semanticIndex: any SemanticIndexing = SemanticIndex()
+        semanticIndex: any SemanticIndexing = SemanticIndex(),
+        retentionInterval: TimeInterval = ClipboardStore.defaultRetentionInterval,
+        currentDate: @escaping () -> Date = Date.init
     ) {
         self.maxItems = maxItems
         self.maxImageItems = maxImageItems
+        self.retentionInterval = retentionInterval
+        self.currentDate = currentDate
         self.pasteboard = pasteboard
         self.persistence = persistence
         self.semanticIndex = semanticIndex
-        self.items = Self.prunedItems(persistence?.loadItems() ?? [], maxItems: maxItems, maxImageItems: maxImageItems)
+        let loadedItems = persistence?.loadItems() ?? []
+        self.items = Self.prunedItems(
+            loadedItems,
+            maxItems: maxItems,
+            maxImageItems: maxImageItems,
+            retentionInterval: retentionInterval,
+            now: currentDate()
+        )
+        if items.count != loadedItems.count {
+            persist()
+        }
         rebuildSemanticIndex()
+        scheduleCleanup()
+    }
+
+    deinit {
+        cleanupTask?.cancel()
+        searchTask?.cancel()
     }
 
     func add(_ item: ClipboardItem) {
+        pruneExpiredItems()
         let previousIDs = Set(items.map(\.id))
 
         if case .text(let text, id: _, timestamp: let timestamp) = item,
@@ -48,28 +73,43 @@ final class ClipboardStore: ObservableObject {
             let existingID = items[existingIndex].id
             items.remove(at: existingIndex)
             items.insert(.text(text, id: existingID, timestamp: timestamp), at: 0)
-            items = Self.prunedItems(items, maxItems: maxItems, maxImageItems: maxImageItems)
+            items = Self.prunedItems(
+                items,
+                maxItems: maxItems,
+                maxImageItems: maxImageItems,
+                retentionInterval: retentionInterval,
+                now: currentDate()
+            )
             persist()
             syncSemanticIndex(addedItem: items.first, removedIDs: previousIDs.subtracting(Set(items.map(\.id))))
             scheduleSearchIfNeeded()
+            scheduleCleanup()
             return
         }
 
         items.removeAll { $0.isDuplicate(of: item) }
         items.insert(item, at: 0)
-        items = Self.prunedItems(items, maxItems: maxItems, maxImageItems: maxImageItems)
+        items = Self.prunedItems(
+            items,
+            maxItems: maxItems,
+            maxImageItems: maxImageItems,
+            retentionInterval: retentionInterval,
+            now: currentDate()
+        )
 
         persist()
         let currentIDs = Set(items.map(\.id))
         let addedItem = currentIDs.contains(item.id) ? item : nil
         syncSemanticIndex(addedItem: addedItem, removedIDs: previousIDs.subtracting(currentIDs))
         scheduleSearchIfNeeded()
+        scheduleCleanup()
     }
 
     func clear() {
         items.removeAll()
         searchResults.removeAll()
         persist()
+        cleanupTask?.cancel()
         Task { [semanticIndex] in
             await semanticIndex.clear()
         }
@@ -93,6 +133,7 @@ final class ClipboardStore: ObservableObject {
         }
 
         scheduleSearchIfNeeded()
+        scheduleCleanup()
     }
 
     func restore(_ item: ClipboardItem) {
@@ -123,6 +164,58 @@ final class ClipboardStore: ObservableObject {
 
     private func persist() {
         persistence?.saveItems(items)
+    }
+
+    private func pruneExpiredItems() {
+        let previousIDs = Set(items.map(\.id))
+        let prunedItems = Self.prunedItems(
+            items,
+            maxItems: maxItems,
+            maxImageItems: maxImageItems,
+            retentionInterval: retentionInterval,
+            now: currentDate()
+        )
+        let currentIDs = Set(prunedItems.map(\.id))
+        let removedIDs = previousIDs.subtracting(currentIDs)
+
+        guard !removedIDs.isEmpty else {
+            scheduleCleanup()
+            return
+        }
+
+        items = prunedItems
+        searchResults.removeAll { removedIDs.contains($0.id) }
+        persist()
+        syncSemanticIndex(addedItem: nil, removedIDs: removedIDs)
+        scheduleSearchIfNeeded()
+        scheduleCleanup()
+    }
+
+    private func scheduleCleanup() {
+        cleanupTask?.cancel()
+
+        guard let nextExpirationDate = nextExpirationDate() else {
+            cleanupTask = nil
+            return
+        }
+
+        cleanupTask = Task { [weak self] in
+            let now = await self?.currentDate() ?? Date()
+            let delay = max(0, nextExpirationDate.timeIntervalSince(now))
+            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            guard !Task.isCancelled else {
+                return
+            }
+
+            await self?.pruneExpiredItems()
+        }
+    }
+
+    private func nextExpirationDate() -> Date? {
+        items
+            .map { $0.timestamp.addingTimeInterval(retentionInterval) }
+            .filter { $0 > currentDate() }
+            .min()
     }
 
     private func rebuildSemanticIndex() {
@@ -194,13 +287,24 @@ final class ClipboardStore: ObservableObject {
         searchResults = results
     }
 
-    private static func prunedItems(_ items: [ClipboardItem], maxItems: Int, maxImageItems: Int) -> [ClipboardItem] {
+    private static func prunedItems(
+        _ items: [ClipboardItem],
+        maxItems: Int,
+        maxImageItems: Int,
+        retentionInterval: TimeInterval,
+        now: Date
+    ) -> [ClipboardItem] {
         var keptItems: [ClipboardItem] = []
         var keptImageCount = 0
+        let expirationCutoff = now.addingTimeInterval(-retentionInterval)
 
         for item in items {
             guard keptItems.count < maxItems else {
                 break
+            }
+
+            guard item.timestamp > expirationCutoff else {
+                continue
             }
 
             if item.imageValue != nil {

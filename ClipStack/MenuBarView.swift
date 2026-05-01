@@ -3,6 +3,9 @@ import SwiftUI
 
 struct MenuBarView: View {
     @ObservedObject var store: ClipboardStore
+    @ObservedObject var downloadsStore: DownloadsStore
+    @State private var selectedTab: MenuBarTab = .clipboard
+    @Namespace private var tabSelectionNamespace
     @FocusState private var isSearchFocused: Bool
 
     var body: some View {
@@ -11,75 +14,37 @@ struct MenuBarView: View {
 
             Hairline()
 
-            if isSearching && displayItems.isEmpty {
-                searchEmptyState
-            } else if store.items.isEmpty {
-                emptyState
-            } else {
-                historyList
-            }
+            content
+                .id(selectedTab)
+                .transition(tabContentTransition)
+                .animation(tabTransitionAnimation, value: selectedTab)
 
             footer
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.clear)
         .onAppear {
-            DispatchQueue.main.async {
-                isSearchFocused = true
-            }
+            focusSearchIfNeeded()
+        }
+        .onChange(of: selectedTab) { _ in
+            focusSearchIfNeeded()
         }
     }
 
     private var header: some View {
         HStack(spacing: 10) {
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 13, weight: .medium))
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(.secondary)
-
-                TextField("Search...", text: $store.searchQuery)
-                    .textFieldStyle(.plain)
-                    .focused($isSearchFocused)
-                    .font(.system(size: 14, weight: .regular))
-
-                if !store.searchQuery.isEmpty {
-                    Button {
-                        store.searchQuery = ""
-                        isSearchFocused = true
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 13, weight: .medium))
-                            .symbolRenderingMode(.hierarchical)
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.secondary)
-                    .frame(width: 22, height: 22)
-                    .contentShape(Circle())
-                    .help("Clear search")
+            ZStack {
+                if selectedTab == .clipboard {
+                    searchField
+                        .transition(tabHeaderTransition)
+                } else {
+                    downloadsHeaderLabel
+                        .transition(tabHeaderTransition)
                 }
             }
-            .padding(.horizontal, 13)
-            .padding(.vertical, 8)
-            .frame(maxWidth: .infinity)
-            .frame(minHeight: 36)
-            .contentShape(Capsule())
-            .clipStackGlass(cornerRadius: 999, interactive: true)
-            .overlay {
-                Capsule()
-                    .stroke(searchFieldStroke, lineWidth: 0.75)
-            }
-            .onTapGesture {
-                isSearchFocused = true
-            }
+            .animation(tabTransitionAnimation, value: selectedTab)
 
-            Text("\(store.items.count)/\(ClipboardStore.defaultMaxItems)")
-                .font(.system(size: 12, weight: .medium, design: .rounded))
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(.quaternary.opacity(0.55), in: Capsule())
+            modeToggle
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -87,6 +52,140 @@ struct MenuBarView: View {
             Rectangle()
                 .fill(Color(nsColor: .controlBackgroundColor).opacity(0.10))
         }
+    }
+
+    private var searchField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 13, weight: .medium))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(.secondary)
+
+            TextField("Search...", text: $store.searchQuery)
+                .textFieldStyle(.plain)
+                .focused($isSearchFocused)
+                .font(.system(size: 14, weight: .regular))
+
+            if !store.searchQuery.isEmpty {
+                Button {
+                    store.searchQuery = ""
+                    isSearchFocused = true
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 13, weight: .medium))
+                        .symbolRenderingMode(.hierarchical)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .frame(width: 22, height: 22)
+                .contentShape(Circle())
+                .help("Clear search")
+            }
+        }
+        .padding(.horizontal, 13)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity)
+        .frame(minHeight: 36)
+        .contentShape(Capsule())
+        .clipStackGlass(cornerRadius: 999, interactive: true)
+        .overlay {
+            Capsule()
+                .stroke(searchFieldStroke, lineWidth: 0.75)
+        }
+        .onTapGesture {
+            isSearchFocused = true
+        }
+    }
+
+    private var downloadsHeaderLabel: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "arrow.down.circle")
+                .font(.system(size: 13, weight: .medium))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(.secondary)
+
+            Text("Downloads")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.primary)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 13)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity)
+        .frame(minHeight: 36)
+        .clipStackGlass(cornerRadius: 999, interactive: false)
+        .overlay {
+            Capsule()
+                .stroke(Color.white.opacity(0.12), lineWidth: 0.75)
+        }
+    }
+
+    private var modeToggle: some View {
+        HStack(spacing: 2) {
+            modeButton(.clipboard, systemImage: "clipboard", help: "Clipboard")
+            modeButton(.downloads, systemImage: "arrow.down.circle", help: "Downloads")
+        }
+        .padding(3)
+        .frame(height: 36)
+        .clipStackGlass(cornerRadius: 999, interactive: true)
+        .overlay {
+            Capsule()
+                .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
+        }
+        .animation(tabTransitionAnimation, value: selectedTab)
+    }
+
+    private func modeButton(_ tab: MenuBarTab, systemImage: String, help: String) -> some View {
+        Button {
+            withAnimation(tabTransitionAnimation) {
+                selectedTab = tab
+            }
+        } label: {
+            Image(systemName: systemImage)
+                .font(.system(size: 13, weight: .semibold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(selectedTab == tab ? .primary : .secondary)
+                .frame(width: 30, height: 28)
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .background {
+            if selectedTab == tab {
+                Capsule()
+                    .fill(Color(nsColor: .labelColor).opacity(0.12))
+                    .matchedGeometryEffect(id: "selectedTab", in: tabSelectionNamespace)
+            }
+        }
+        .help(help)
+    }
+
+    private var tabTransitionAnimation: Animation {
+        .spring(response: 0.34, dampingFraction: 0.88, blendDuration: 0.08)
+    }
+
+    private var tabHeaderTransition: AnyTransition {
+        .asymmetric(
+            insertion: .opacity.combined(with: .scale(scale: 0.98, anchor: .center)),
+            removal: .opacity.combined(with: .scale(scale: 1.02, anchor: .center))
+        )
+    }
+
+    private var tabContentTransition: AnyTransition {
+        .asymmetric(
+            insertion: .opacity.combined(with: .scale(scale: 0.985, anchor: .top)),
+            removal: .opacity.combined(with: .scale(scale: 1.005, anchor: .top))
+        )
+    }
+
+    private var clipboardCounterBadge: some View {
+        Text("\(store.items.count)/\(ClipboardStore.defaultMaxItems)")
+            .font(.system(size: 12, weight: .medium, design: .rounded))
+            .foregroundStyle(.secondary)
+            .monospacedDigit()
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(.quaternary.opacity(0.55), in: Capsule())
     }
 
     private var searchFieldStroke: Color {
@@ -101,6 +200,22 @@ struct MenuBarView: View {
 
     private var displayItems: [ClipboardItem] {
         isSearching ? store.searchResults : store.items
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        switch selectedTab {
+        case .clipboard:
+            if isSearching && displayItems.isEmpty {
+                searchEmptyState
+            } else if store.items.isEmpty {
+                emptyState
+            } else {
+                historyList
+            }
+        case .downloads:
+            DownloadsListView(items: downloadsStore.items)
+        }
     }
 
     private var emptyState: some View {
@@ -183,8 +298,8 @@ struct MenuBarView: View {
 
     private var footer: some View {
         HStack {
-            GlassFooterButton(title: "Clear All", systemImage: "trash", isDisabled: store.items.isEmpty) {
-                store.clear()
+            GlassFooterButton(title: "Clear All", systemImage: "trash", isDisabled: isClearDisabled) {
+                clearCurrentTab()
             }
 
             Spacer()
@@ -196,6 +311,35 @@ struct MenuBarView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
     }
+
+    private var isClearDisabled: Bool {
+        switch selectedTab {
+        case .clipboard:
+            return store.items.isEmpty
+        case .downloads:
+            return downloadsStore.items.isEmpty
+        }
+    }
+
+    private func clearCurrentTab() {
+        switch selectedTab {
+        case .clipboard:
+            store.clear()
+        case .downloads:
+            downloadsStore.clear()
+        }
+    }
+
+    private func focusSearchIfNeeded() {
+        DispatchQueue.main.async {
+            isSearchFocused = selectedTab == .clipboard
+        }
+    }
+}
+
+private enum MenuBarTab: Equatable {
+    case clipboard
+    case downloads
 }
 
 private struct ClipboardItemRow: View {
@@ -464,7 +608,7 @@ private struct Hairline: View {
     }
 }
 
-private extension View {
+extension View {
     @ViewBuilder
     func clipStackGlass(cornerRadius: CGFloat, interactive: Bool) -> some View {
         if #available(macOS 26.0, *) {

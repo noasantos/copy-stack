@@ -24,6 +24,9 @@ struct ClipboardHistoryPersistence: ClipboardHistoryPersisting {
         enum ImageEncoding: String, Codable {
             case png
             case tiff
+            case jpeg
+            case gif
+            case heic
         }
 
         let kind: Kind
@@ -263,6 +266,12 @@ private extension ClipboardHistoryPersistence.StoredItem.ImageEncoding {
             self = .png
         case .tiff:
             self = .tiff
+        case .jpeg:
+            self = .jpeg
+        case .gif:
+            self = .gif
+        case .heic:
+            self = .heic
         }
     }
 
@@ -272,6 +281,12 @@ private extension ClipboardHistoryPersistence.StoredItem.ImageEncoding {
             return .png
         case .tiff:
             return .tiff
+        case .jpeg:
+            return .jpeg
+        case .gif:
+            return .gif
+        case .heic:
+            return .heic
         }
     }
 }

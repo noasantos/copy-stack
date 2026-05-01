@@ -11,6 +11,7 @@ Do not include private clipboard contents, screenshots, passwords, tokens, or ot
 ClipStack is an MVP local-only clipboard manager. The following limitations are accepted for the current release:
 
 - Clipboard history is stored unencrypted at `~/Library/Application Support/ClipStack/`, with metadata in `history.json` and image payloads in `Images/`.
+- The Downloads tray observes top-level files in `~/Downloads` and keeps recent file references in memory only. It does not persist Downloads metadata or copy downloaded files into ClipStack storage.
 - The app does not use the App Sandbox.
 - Release builds are ad-hoc signed and do not use Hardened Runtime.
 - Builds are not notarized with Apple Developer ID.
@@ -29,6 +30,7 @@ The current check is static: `scripts/lint-release.sh` scans app Swift sources f
 - Clipboard history metadata stored in `history.json`
 - Clipboard image payloads stored under `Images/`
 - Screenshot images copied into clipboard history
+- Ephemeral Downloads tray file references
 - Semantic index data derived from clipboard text
 
 **Trust Boundary**
@@ -41,6 +43,7 @@ ClipStack operates inside the local user session only. The primary trust boundar
 - Clipboard interception by other local processes with pasteboard access
 - Installer supply-chain risk from GitHub Releases and the `curl | bash` install path
 - Malformed or oversized filesystem input from screenshot files
+- Filesystem churn from incomplete or temporary downloads
 
 **Deferred Mitigations**
 

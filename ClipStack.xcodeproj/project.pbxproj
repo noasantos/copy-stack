@@ -17,10 +17,15 @@
 		600000000000000000000007 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500000000000000000000007 /* MenuBarView.swift */; };
 		60000000000000000000000B /* ClipboardHistoryPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50000000000000000000000E /* ClipboardHistoryPersistence.swift */; };
 		60000000000000000000000C /* SemanticIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50000000000000000000000F /* SemanticIndex.swift */; };
+		60000000000000000000000E /* DownloadItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500000000000000000000011 /* DownloadItem.swift */; };
+		60000000000000000000000F /* DownloadsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500000000000000000000012 /* DownloadsStore.swift */; };
+		600000000000000000000010 /* DownloadsWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500000000000000000000013 /* DownloadsWatcher.swift */; };
+		600000000000000000000011 /* DownloadsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500000000000000000000014 /* DownloadsListView.swift */; };
 		600000000000000000000008 /* ClipboardStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500000000000000000000008 /* ClipboardStoreTests.swift */; };
 		600000000000000000000009 /* ClipboardMonitorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500000000000000000000009 /* ClipboardMonitorTests.swift */; };
 		60000000000000000000000A /* ScreenshotWatcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50000000000000000000000A /* ScreenshotWatcherTests.swift */; };
 		60000000000000000000000D /* SemanticIndexTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500000000000000000000010 /* SemanticIndexTests.swift */; };
+		600000000000000000000012 /* DownloadsStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500000000000000000000015 /* DownloadsStoreTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -45,10 +50,15 @@
 		50000000000000000000000B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		50000000000000000000000E /* ClipboardHistoryPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardHistoryPersistence.swift; sourceTree = "<group>"; };
 		50000000000000000000000F /* SemanticIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SemanticIndex.swift; sourceTree = "<group>"; };
+		500000000000000000000011 /* DownloadItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadItem.swift; sourceTree = "<group>"; };
+		500000000000000000000012 /* DownloadsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsStore.swift; sourceTree = "<group>"; };
+		500000000000000000000013 /* DownloadsWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsWatcher.swift; sourceTree = "<group>"; };
+		500000000000000000000014 /* DownloadsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsListView.swift; sourceTree = "<group>"; };
 		500000000000000000000008 /* ClipboardStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardStoreTests.swift; sourceTree = "<group>"; };
 		500000000000000000000009 /* ClipboardMonitorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardMonitorTests.swift; sourceTree = "<group>"; };
 		50000000000000000000000A /* ScreenshotWatcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotWatcherTests.swift; sourceTree = "<group>"; };
 		500000000000000000000010 /* SemanticIndexTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SemanticIndexTests.swift; sourceTree = "<group>"; };
+		500000000000000000000015 /* DownloadsStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsStoreTests.swift; sourceTree = "<group>"; };
 		50000000000000000000000C /* ClipStack.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ClipStack.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		50000000000000000000000D /* ClipStackTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ClipStackTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -92,7 +102,11 @@
 				500000000000000000000006 /* ClipboardItem.swift */,
 				50000000000000000000000E /* ClipboardHistoryPersistence.swift */,
 				50000000000000000000000F /* SemanticIndex.swift */,
+				500000000000000000000011 /* DownloadItem.swift */,
+				500000000000000000000012 /* DownloadsStore.swift */,
+				500000000000000000000013 /* DownloadsWatcher.swift */,
 				500000000000000000000007 /* MenuBarView.swift */,
+				500000000000000000000014 /* DownloadsListView.swift */,
 				50000000000000000000000B /* Info.plist */,
 			);
 			path = ClipStack;
@@ -105,6 +119,7 @@
 				500000000000000000000009 /* ClipboardMonitorTests.swift */,
 				50000000000000000000000A /* ScreenshotWatcherTests.swift */,
 				500000000000000000000010 /* SemanticIndexTests.swift */,
+				500000000000000000000015 /* DownloadsStoreTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -225,7 +240,11 @@
 				600000000000000000000006 /* ClipboardItem.swift in Sources */,
 				60000000000000000000000B /* ClipboardHistoryPersistence.swift in Sources */,
 				60000000000000000000000C /* SemanticIndex.swift in Sources */,
+				60000000000000000000000E /* DownloadItem.swift in Sources */,
+				60000000000000000000000F /* DownloadsStore.swift in Sources */,
+				600000000000000000000010 /* DownloadsWatcher.swift in Sources */,
 				600000000000000000000007 /* MenuBarView.swift in Sources */,
+				600000000000000000000011 /* DownloadsListView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -237,6 +256,7 @@
 				600000000000000000000009 /* ClipboardMonitorTests.swift in Sources */,
 				60000000000000000000000A /* ScreenshotWatcherTests.swift in Sources */,
 				60000000000000000000000D /* SemanticIndexTests.swift in Sources */,
+				600000000000000000000012 /* DownloadsStoreTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -366,7 +386,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.2.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = NO;
@@ -418,7 +438,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.2.0;
 				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.clipstack.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
