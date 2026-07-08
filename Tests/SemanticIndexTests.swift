@@ -147,7 +147,20 @@ final class SemanticIndexTests: XCTestCase {
         XCTAssertEqual(results.map(\.id), [item.id])
     }
 
-    func testClearRemovesIndex() async {
+    func testSearchIndexesItemsLazilyWithoutExplicitRebuild() async {
+        let item = ClipboardItem.text("agenda for call")
+        let provider = DictionaryVectorProvider(vectors: [
+            "meeting": [1, 0],
+            "agenda for call": [0.90, 0.44]
+        ])
+        let index = SemanticIndex(vectorProvider: provider)
+
+        let results = await index.search(query: "meeting", allItems: [item])
+
+        XCTAssertEqual(results.map(\.id), [item.id])
+    }
+
+    func testClearRemovesIndexWhenItemsAreCleared() async {
         let item = ClipboardItem.text("agenda for call")
         let provider = DictionaryVectorProvider(vectors: [
             "meeting": [1, 0],
@@ -158,7 +171,7 @@ final class SemanticIndexTests: XCTestCase {
         await index.rebuild(items: [(item.id, item.textValue!)])
         await index.clear()
 
-        let results = await index.search(query: "meeting", allItems: [item])
+        let results = await index.search(query: "meeting", allItems: [])
 
         XCTAssertTrue(results.isEmpty)
     }

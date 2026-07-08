@@ -18,37 +18,48 @@ protocol SemanticVectorProviding: Sendable {
 }
 
 final class NaturalLanguageSentenceVectorProvider: SemanticVectorProviding, @unchecked Sendable {
-    private var didLoadEmbeddings = false
     private var englishEmbedding: NLEmbedding?
     private var portugueseEmbedding: NLEmbedding?
 
     func vector(for text: String) -> [Float]? {
-        loadEmbeddingsIfNeeded()
         let embedding = preferredEmbedding(for: text)
         return embedding?.vector(for: text)?.map { Float($0) }
     }
 
-    private func loadEmbeddingsIfNeeded() {
-        guard !didLoadEmbeddings else {
-            return
-        }
-
-        englishEmbedding = NLEmbedding.sentenceEmbedding(for: .english)
-        portugueseEmbedding = NLEmbedding.sentenceEmbedding(for: .portuguese)
-        didLoadEmbeddings = true
-
-        if englishEmbedding == nil && portugueseEmbedding == nil {
-            logger.warning("ClipStack semantic search unavailable: no sentence embeddings found")
-        }
-    }
-
     private func preferredEmbedding(for text: String) -> NLEmbedding? {
         if NLLanguageRecognizer.dominantLanguage(for: text) == .portuguese,
-           let portugueseEmbedding {
+           let portugueseEmbedding = embedding(for: .portuguese) {
             return portugueseEmbedding
         }
 
-        return englishEmbedding ?? portugueseEmbedding
+        return embedding(for: .english) ?? embedding(for: .portuguese)
+    }
+
+    private func embedding(for language: NLLanguage) -> NLEmbedding? {
+        switch language {
+        case .english:
+            if englishEmbedding == nil {
+                englishEmbedding = NLEmbedding.sentenceEmbedding(for: .english)
+                logUnavailableEmbeddingIfNeeded(language: language, embedding: englishEmbedding)
+            }
+            return englishEmbedding
+        case .portuguese:
+            if portugueseEmbedding == nil {
+                portugueseEmbedding = NLEmbedding.sentenceEmbedding(for: .portuguese)
+                logUnavailableEmbeddingIfNeeded(language: language, embedding: portugueseEmbedding)
+            }
+            return portugueseEmbedding
+        default:
+            return nil
+        }
+    }
+
+    private func logUnavailableEmbeddingIfNeeded(language: NLLanguage, embedding: NLEmbedding?) {
+        guard embedding == nil else {
+            return
+        }
+
+        logger.warning("ClipStack semantic search unavailable for \(language.rawValue, privacy: .public): no sentence embedding found")
     }
 }
 
@@ -58,23 +69,26 @@ actor SemanticIndex: SemanticIndexing {
     private let minimumScore: Float
     private let substringBoost: Float
     private let maxResults: Int
+    private let maxIndexedItems: Int
 
     init(
         vectorProvider: any SemanticVectorProviding = NaturalLanguageSentenceVectorProvider(),
         minimumScore: Float = 0.30,
         substringBoost: Float = 0.15,
-        maxResults: Int = 50
+        maxResults: Int = 50,
+        maxIndexedItems: Int = 200
     ) {
         self.vectorProvider = vectorProvider
         self.minimumScore = minimumScore
         self.substringBoost = substringBoost
         self.maxResults = maxResults
+        self.maxIndexedItems = maxIndexedItems
     }
 
     func rebuild(items: [(id: UUID, text: String)]) async {
         vectors.removeAll(keepingCapacity: true)
 
-        for item in items {
+        for item in items.prefix(maxIndexedItems) {
             guard let vector = vectorProvider.vector(for: item.text) else {
                 continue
             }
@@ -126,6 +140,7 @@ actor SemanticIndex: SemanticIndexing {
             orderByID[item.id] = offset
         }
         let literalMatchIDs = Set(literalMatches.map(\.id))
+        indexMissingTextItems(from: allItems, excluding: literalMatchIDs)
 
         let scoredItems: [(item: ClipboardItem, score: Float)] = vectors.compactMap { id, vector in
             guard !literalMatchIDs.contains(id),
@@ -152,6 +167,38 @@ actor SemanticIndex: SemanticIndexing {
             .map(\.item)
 
         return Array((literalMatches + semanticMatches).prefix(maxResults))
+    }
+
+    private func indexMissingTextItems(from allItems: [ClipboardItem], excluding excludedIDs: Set<UUID>) {
+        var indexedCount = 0
+        var currentTextIDs = Set<UUID>()
+
+        for item in allItems {
+            guard let text = item.textValue else {
+                continue
+            }
+
+            currentTextIDs.insert(item.id)
+
+            guard indexedCount < maxIndexedItems else {
+                continue
+            }
+
+            guard !excludedIDs.contains(item.id), vectors[item.id] == nil else {
+                indexedCount += 1
+                continue
+            }
+
+            if let vector = vectorProvider.vector(for: text) {
+                vectors[item.id] = vector
+            }
+            indexedCount += 1
+        }
+
+        let staleIDs = vectors.keys.filter { !currentTextIDs.contains($0) }
+        for id in staleIDs {
+            vectors.removeValue(forKey: id)
+        }
     }
 
     private func substringMatches(query: String, allItems: [ClipboardItem]) -> [ClipboardItem] {

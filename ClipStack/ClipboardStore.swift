@@ -55,7 +55,6 @@ final class ClipboardStore: ObservableObject {
         if items.count != loadedItems.count {
             persist()
         }
-        rebuildSemanticIndex()
         scheduleCleanup()
     }
 
@@ -218,13 +217,6 @@ final class ClipboardStore: ObservableObject {
             .min()
     }
 
-    private func rebuildSemanticIndex() {
-        let textItems = Self.textIndexItems(from: items)
-        Task { [semanticIndex] in
-            await semanticIndex.rebuild(items: textItems)
-        }
-    }
-
     private func syncSemanticIndex(addedItem: ClipboardItem?, removedIDs: Set<UUID>) {
         let textEntry = addedItem.flatMap { item -> (id: UUID, text: String)? in
             guard let text = item.textValue else {
@@ -320,13 +312,4 @@ final class ClipboardStore: ObservableObject {
         return keptItems
     }
 
-    private static func textIndexItems(from items: [ClipboardItem]) -> [(id: UUID, text: String)] {
-        items.compactMap { item in
-            guard let text = item.textValue else {
-                return nil
-            }
-
-            return (item.id, text)
-        }
-    }
 }
