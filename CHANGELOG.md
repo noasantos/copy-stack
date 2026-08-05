@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-08-05
+
+### Fixed
+
+- Prevent very large clipboard entries from crashing semantic indexing while keeping full-text literal search intact.
+- Start ClipStack automatically at login and relaunch it if the process unexpectedly exits.
+
 ## [0.2.0] - 2026-05-01
 
 ### Added

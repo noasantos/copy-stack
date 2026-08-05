@@ -23,3 +23,13 @@ if [[ -n "${NETWORK_HITS}" ]]; then
   echo "${NETWORK_HITS}" >&2
   exit 1
 fi
+
+if ! grep -A1 '<key>RunAtLoad</key>' "${ROOT_DIR}/install.sh" | grep -q '<true/>'; then
+  echo "ERROR: install.sh must start ClipStack automatically at login." >&2
+  exit 1
+fi
+
+if ! grep -A1 '<key>KeepAlive</key>' "${ROOT_DIR}/install.sh" | grep -q '<true/>'; then
+  echo "ERROR: install.sh must keep ClipStack active after unexpected exits." >&2
+  exit 1
+fi

@@ -18,12 +18,27 @@ protocol SemanticVectorProviding: Sendable {
 }
 
 final class NaturalLanguageSentenceVectorProvider: SemanticVectorProviding, @unchecked Sendable {
+    static let maximumEmbeddingCharacters = 4_096
+
     private var englishEmbedding: NLEmbedding?
     private var portugueseEmbedding: NLEmbedding?
 
     func vector(for text: String) -> [Float]? {
-        let embedding = preferredEmbedding(for: text)
-        return embedding?.vector(for: text)?.map { Float($0) }
+        let embeddingText = Self.embeddingText(for: text)
+        let embedding = preferredEmbedding(for: embeddingText)
+        return embedding?.vector(for: embeddingText)?.map { Float($0) }
+    }
+
+    static func embeddingText(for text: String) -> String {
+        guard text.count > maximumEmbeddingCharacters else {
+            return text
+        }
+
+        let leadingCharacterCount = maximumEmbeddingCharacters / 2
+        let trailingCharacterCount = maximumEmbeddingCharacters - leadingCharacterCount - 1
+        return String(text.prefix(leadingCharacterCount))
+            + "\n"
+            + String(text.suffix(trailingCharacterCount))
     }
 
     private func preferredEmbedding(for text: String) -> NLEmbedding? {

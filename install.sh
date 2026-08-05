@@ -8,7 +8,7 @@ set -euo pipefail
 # Source: https://github.com/noasantos/copy-stack
 # ──────────────────────────────────────────────────────────────
 
-LATEST_VERSION="0.2.0"   # ← Update this on each release
+LATEST_VERSION="0.2.1"   # ← Update this on each release
 VERSION="${CLIPSTACK_VERSION:-${1:-${LATEST_VERSION}}}"
 APP_NAME="ClipStack"
 REPO="noasantos/copy-stack"
@@ -24,9 +24,12 @@ case "${VERSION}" in
   0.2.0)
     EXPECTED_SHA256="2639be8aacc270890c971fb37c520fb23034a87253d28d34bb5e0f08f26b1a32"
     ;;
+  0.2.1)
+    EXPECTED_SHA256="71add0060db6b44363b14347f7088d23771164d965466ac8213f58e7829ab686"
+    ;;
   *)
     echo "  ✗ ERROR: Unsupported ClipStack version: ${VERSION}" >&2
-    echo "  Supported versions: 0.1.0, 0.1.1, 0.2.0" >&2
+    echo "  Supported versions: 0.1.0, 0.1.1, 0.2.0, 0.2.1" >&2
     exit 1
     ;;
 esac
@@ -106,6 +109,12 @@ APP_SRC="${TMP_DIR}/extracted/${APP_NAME}.app"
 
 # ── Install ───────────────────────────────────────────────────
 APP_DEST="${INSTALL_DIR}/${APP_NAME}.app"
+USER_DOMAIN="gui/$(id -u)"
+EXISTING_PLIST_PATH="${HOME}/Library/LaunchAgents/com.clipstack.app.plist"
+
+launchctl bootout "${USER_DOMAIN}/com.clipstack.app" 2>/dev/null || true
+launchctl unload "${EXISTING_PLIST_PATH}" 2>/dev/null || true
+pkill -x "${APP_NAME}" 2>/dev/null || true
 
 if [ -d "${APP_DEST}" ]; then
   info "Removing previous installation..."
@@ -165,21 +174,34 @@ cat > "${PLIST_PATH}" <<PLIST
         <string>/Applications/ClipStack.app/Contents/MacOS/ClipStack</string>
     </array>
     <key>RunAtLoad</key>
-    <false/>
+    <true/>
     <key>KeepAlive</key>
-    <false/>
+    <true/>
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
     <key>LimitLoadToSessionType</key>
     <string>Aqua</string>
 </dict>
 </plist>
 PLIST
-launchctl load "${PLIST_PATH}" 2>/dev/null || true
-success "Launch at login configured"
+launchctl bootout "${USER_DOMAIN}/com.clipstack.app" 2>/dev/null || true
+launchctl enable "${USER_DOMAIN}/com.clipstack.app"
+if launchctl bootstrap "${USER_DOMAIN}" "${PLIST_PATH}" 2>/dev/null; then
+  launchctl kickstart -k "${USER_DOMAIN}/com.clipstack.app" 2>/dev/null || true
+  success "Launch at login and automatic restart configured"
+else
+  launchctl load "${PLIST_PATH}" 2>/dev/null || true
+  success "Launch at login configured"
+fi
 
 # ── Launch app immediately ────────────────────────────────────
 info "Launching ClipStack..."
-open "${APP_DEST}" || true
-success "ClipStack launched — look for the clipboard icon in your menu bar"
+if pgrep -x "${APP_NAME}" >/dev/null 2>&1; then
+  success "ClipStack launched by its background agent"
+else
+  open "${APP_DEST}" || true
+  success "ClipStack launched — look for the clipboard icon in your menu bar"
+fi
 
 # ── Done ──────────────────────────────────────────────────────
 echo ""

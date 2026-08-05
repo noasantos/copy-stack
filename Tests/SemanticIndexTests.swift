@@ -3,6 +3,31 @@ import AppKit
 import XCTest
 
 final class SemanticIndexTests: XCTestCase {
+    func testLongEmbeddingInputIsBoundedAndKeepsBothEnds() {
+        let beginning = String(repeating: "a", count: 5_000)
+        let ending = String(repeating: "z", count: 5_000)
+
+        let embeddingText = NaturalLanguageSentenceVectorProvider.embeddingText(
+            for: beginning + ending
+        )
+
+        XCTAssertEqual(
+            embeddingText.count,
+            NaturalLanguageSentenceVectorProvider.maximumEmbeddingCharacters
+        )
+        XCTAssertTrue(embeddingText.hasPrefix(String(repeating: "a", count: 2_048)))
+        XCTAssertTrue(embeddingText.hasSuffix(String(repeating: "z", count: 2_047)))
+    }
+
+    func testShortEmbeddingInputRemainsUnchanged() {
+        let text = "short clipboard text"
+
+        XCTAssertEqual(
+            NaturalLanguageSentenceVectorProvider.embeddingText(for: text),
+            text
+        )
+    }
+
     func testSubstringFallbackForShortQuery() async {
         let provider = CountingNilVectorProvider()
         let matchingItem = ClipboardItem.text("hello world")
