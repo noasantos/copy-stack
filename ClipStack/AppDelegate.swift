@@ -11,6 +11,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var clipboardMonitor: ClipboardMonitor?
     private var screenshotWatcher: ScreenshotWatcher?
+    private var areaCaptureController: InstantAreaCaptureController?
+    private var areaCaptureHotKey: GlobalAreaCaptureHotKey?
     private var downloadsWatcher: DownloadsWatcher?
     private var statusItem: NSStatusItem?
     private var popover: NSPopover?
@@ -33,6 +35,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         screenshotWatcher.start()
         self.screenshotWatcher = screenshotWatcher
 
+        let areaCaptureController = InstantAreaCaptureController(screenshotProcessor: screenshotWatcher)
+        self.areaCaptureController = areaCaptureController
+
+        let areaCaptureHotKey = GlobalAreaCaptureHotKey { [weak areaCaptureController] in
+            areaCaptureController?.captureArea()
+        }
+        if areaCaptureHotKey.register() {
+            self.areaCaptureHotKey = areaCaptureHotKey
+        }
+
         let downloadsWatcher = DownloadsWatcher(store: downloadsStore)
         downloadsWatcher.start()
         self.downloadsWatcher = downloadsWatcher
@@ -40,6 +52,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         clipboardMonitor?.stop()
+        areaCaptureHotKey?.unregister()
         screenshotWatcher?.stop()
         downloadsWatcher?.stop()
     }

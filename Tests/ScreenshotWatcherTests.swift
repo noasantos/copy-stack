@@ -84,6 +84,29 @@ final class ScreenshotWatcherTests: XCTestCase {
         XCTAssertTrue(store.items.isEmpty)
     }
 
+    func testConcurrentProcessingOfSameScreenshotAddsAndNotifiesOnce() async throws {
+        let directoryURL = try makeTemporaryDirectory()
+        let fileURL = directoryURL.appendingPathComponent("Screenshot ClipStack duplicate.png")
+        let imageData = try XCTUnwrap(NSImage.testImage(width: 2, height: 2).encodedData(using: .png))
+        try imageData.write(to: fileURL)
+        let store = ClipboardStore()
+        var notificationCount = 0
+        let watcher = ScreenshotWatcher(
+            store: store,
+            directoryURL: directoryURL,
+            notificationPoster: { notificationCount += 1 }
+        )
+
+        let firstTask = watcher.copyScreenshot(at: fileURL)
+        let secondTask = watcher.copyScreenshot(at: fileURL)
+        await firstTask.value
+        await secondTask.value
+
+        XCTAssertEqual(store.items.count, 1)
+        XCTAssertNotNil(store.items.first?.imageValue)
+        XCTAssertEqual(notificationCount, 1)
+    }
+
     private func makeTemporaryDirectory() throws -> URL {
         let directoryURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("ScreenshotWatcherTests", isDirectory: true)

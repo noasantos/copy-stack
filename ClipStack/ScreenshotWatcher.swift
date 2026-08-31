@@ -15,7 +15,7 @@ final class ScreenshotWatcher {
         let creationDate: Date
     }
 
-    private enum ScreenshotLoadResult: Sendable {
+    fileprivate enum ScreenshotLoadResult: Sendable {
         case loaded(ClipboardImage)
         case skipped
         case failed
@@ -24,18 +24,19 @@ final class ScreenshotWatcher {
     static let recentScreenshotInterval: TimeInterval = 3
 
     private let directoryURL: URL
-    private let store: ClipboardStore
+    private let processor: ScreenshotProcessor
     private let queue = DispatchQueue(label: "com.startapse.ClipStack.screenshot-watcher")
     private var source: DispatchSourceFileSystemObject?
     private var fileDescriptor: CInt = -1
-    private var processedFileIdentifiers = Set<String>()
 
+    @MainActor
     init(
         store: ClipboardStore,
-        directoryURL: URL = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first!
+        directoryURL: URL = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first!,
+        notificationPoster: @escaping @MainActor () -> Void = ScreenshotWatcher.postScreenshotNotification
     ) {
-        self.store = store
         self.directoryURL = directoryURL
+        self.processor = ScreenshotProcessor(store: store, notificationPoster: notificationPoster)
     }
 
     deinit {
@@ -128,44 +129,25 @@ final class ScreenshotWatcher {
         let screenshotURLs = Self.filterRecentScreenshotFiles(candidates)
 
         for url in screenshotURLs {
-            let identifier = fileIdentifier(for: url)
-            guard !processedFileIdentifiers.contains(identifier) else {
-                continue
-            }
-
-            processedFileIdentifiers.insert(identifier)
             copyScreenshot(at: url)
         }
     }
 
-    private func fileIdentifier(for url: URL) -> String {
-        if let values = try? url.resourceValues(forKeys: [.fileResourceIdentifierKey]), let identifier = values.fileResourceIdentifier {
-            return String(describing: identifier)
-        }
-
-        return url.path
-    }
-
     @discardableResult
     func copyScreenshot(at url: URL) -> Task<Void, Never> {
-        let store = store
+        let processor = processor
 
-        return Task { @MainActor [store, url] in
-            let loadResult = await Self.loadScreenshotIfSafe(at: url)
-
-            guard case .loaded(let image) = loadResult else {
-                if case .failed = loadResult {
-                    logger.warning("ClipStack failed to load screenshot image")
-                }
-                return
-            }
-
-            store.copyScreenshotImageToPasteboardAndHistory(image)
-            Self.postScreenshotNotification()
+        return Task { @MainActor [processor, url] in
+            _ = await processor.processScreenshot(at: url)
         }
     }
 
-    private static func loadScreenshotIfSafe(at url: URL) async -> ScreenshotLoadResult {
+    @MainActor
+    func processScreenshot(at url: URL) async -> ScreenshotProcessingResult {
+        await processor.processScreenshot(at: url)
+    }
+
+    fileprivate static func loadScreenshotIfSafe(at url: URL) async -> ScreenshotLoadResult {
         await Task.detached {
             guard Self.isSafeScreenshotFile(at: url) else {
                 return .skipped
@@ -208,7 +190,7 @@ final class ScreenshotWatcher {
     }
 
     @MainActor
-    private static func postScreenshotNotification() {
+    static func postScreenshotNotification() {
         let center = UNUserNotificationCenter.current()
         center.getNotificationSettings { settings in
             guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else {
@@ -227,5 +209,84 @@ final class ScreenshotWatcher {
 
             UNUserNotificationCenter.current().add(request)
         }
+    }
+}
+
+enum ScreenshotProcessingResult: Equatable, Sendable {
+    case added
+    case duplicate
+    case skipped
+    case failed
+}
+
+@MainActor
+protocol ScreenshotProcessing: AnyObject {
+    func processScreenshot(at url: URL) async -> ScreenshotProcessingResult
+}
+
+extension ScreenshotWatcher: ScreenshotProcessing {}
+
+@MainActor
+private final class ScreenshotProcessor {
+    private let store: ClipboardStore
+    private let notificationPoster: () -> Void
+    private var completedFileIdentifiers = Set<String>()
+    private var inFlightTasks: [String: Task<ScreenshotProcessingResult, Never>] = [:]
+
+    init(store: ClipboardStore, notificationPoster: @escaping () -> Void) {
+        self.store = store
+        self.notificationPoster = notificationPoster
+    }
+
+    func processScreenshot(at url: URL) async -> ScreenshotProcessingResult {
+        let identifier = fileIdentifier(for: url)
+
+        if completedFileIdentifiers.contains(identifier) {
+            return .duplicate
+        }
+
+        if let inFlightTask = inFlightTasks[identifier] {
+            let result = await inFlightTask.value
+            if result == .added {
+                return .duplicate
+            }
+            return await processScreenshot(at: url)
+        }
+
+        let store = store
+        let notificationPoster = notificationPoster
+        let processingTask = Task { @MainActor in
+            let loadResult = await ScreenshotWatcher.loadScreenshotIfSafe(at: url)
+
+            switch loadResult {
+            case .loaded(let image):
+                store.copyScreenshotImageToPasteboardAndHistory(image)
+                notificationPoster()
+                return ScreenshotProcessingResult.added
+            case .skipped:
+                return ScreenshotProcessingResult.skipped
+            case .failed:
+                logger.warning("ClipStack failed to load screenshot image")
+                return ScreenshotProcessingResult.failed
+            }
+        }
+        inFlightTasks[identifier] = processingTask
+        let result = await processingTask.value
+        inFlightTasks[identifier] = nil
+
+        if result == .added {
+            completedFileIdentifiers.insert(identifier)
+        }
+
+        return result
+    }
+
+    private func fileIdentifier(for url: URL) -> String {
+        if let values = try? url.resourceValues(forKeys: [.fileResourceIdentifierKey]),
+           let identifier = values.fileResourceIdentifier {
+            return String(describing: identifier)
+        }
+
+        return url.standardizedFileURL.path
     }
 }

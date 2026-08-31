@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Register `Shift + Command + S` as a global shortcut for instant native area capture to the Desktop, clipboard, and ClipStack history without the floating thumbnail.
+
 ## [0.2.1] - 2026-08-05
 
 ### Fixed
