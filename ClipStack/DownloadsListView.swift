@@ -3,6 +3,7 @@ import SwiftUI
 
 struct DownloadsListView: View {
     let items: [DownloadItem]
+    @Binding var selection: ItemSelection<String>
 
     var body: some View {
         if items.isEmpty {
@@ -16,7 +17,26 @@ struct DownloadsListView: View {
         ScrollView {
             LazyVStack(spacing: 2) {
                 ForEach(items) { item in
-                    DownloadItemRow(item: item)
+                    DownloadItemRow(
+                        item: item,
+                        isSelectionMode: selection.isActive,
+                        isSelected: selection.contains(item.id),
+                        dragPayloads: {
+                            selection
+                                .dragItems(startingWith: item.id, from: items, id: \.id)
+                                .map { draggedItem in
+                                    ItemDragPayload(
+                                        writer: draggedItem.url as NSURL,
+                                        preview: NSWorkspace.shared.icon(forFile: draggedItem.url.path)
+                                    )
+                                }
+                        },
+                        onToggleSelection: {
+                            withAnimation(.spring(response: 0.30, dampingFraction: 0.84)) {
+                                selection.toggle(item.id)
+                            }
+                        }
+                    )
                 }
             }
             .padding(.horizontal, 8)
@@ -56,11 +76,44 @@ struct DownloadsListView: View {
 
 private struct DownloadItemRow: View {
     let item: DownloadItem
+    let isSelectionMode: Bool
+    let isSelected: Bool
+    let dragPayloads: () -> [ItemDragPayload]
+    let onToggleSelection: () -> Void
 
     @State private var isHovered = false
 
+    @ViewBuilder
     var body: some View {
+        if isSelectionMode {
+            rowContent
+                .overlay {
+                    MultiItemDragSource(payloads: dragPayloads, onClick: onToggleSelection)
+                        .accessibilityHidden(true)
+                }
+        } else {
+            rowContent
+                .onDrag {
+                    if let provider = NSItemProvider(contentsOf: item.url) {
+                        return provider
+                    }
+
+                    return NSItemProvider(object: item.url as NSURL)
+                }
+        }
+    }
+
+    private var rowContent: some View {
         HStack(spacing: 12) {
+            if isSelectionMode {
+                RoundSelectionIndicator(isSelected: isSelected)
+                    .transition(
+                        .move(edge: .leading)
+                            .combined(with: .opacity)
+                            .combined(with: .scale(scale: 0.82))
+                    )
+            }
+
             Image(nsImage: NSWorkspace.shared.icon(forFile: item.url.path))
                 .resizable()
                 .scaledToFit()
@@ -95,22 +148,21 @@ private struct DownloadItemRow: View {
             RoundedRectangle(cornerRadius: 7, style: .continuous)
                 .fill(rowFill)
         }
+        .animation(.spring(response: 0.30, dampingFraction: 0.84), value: isSelectionMode)
+        .animation(.easeInOut(duration: 0.16), value: isSelected)
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.16)) {
                 isHovered = hovering
             }
         }
-        .onDrag {
-            if let provider = NSItemProvider(contentsOf: item.url) {
-                return provider
-            }
-
-            return NSItemProvider(object: item.url as NSURL)
-        }
     }
 
     private var rowFill: Color {
-        isHovered
+        if isSelected {
+            return Color.accentColor.opacity(0.14)
+        }
+
+        return isHovered
             ? Color(nsColor: .labelColor).opacity(0.10)
             : .clear
     }

@@ -136,25 +136,28 @@ final class ClipboardStore: ObservableObject {
     }
 
     func restore(_ item: ClipboardItem) {
-        writeToPasteboard(item)
+        restore([item])
+    }
+
+    func restore(_ items: [ClipboardItem]) {
+        let pasteboardItems = items.compactMap { $0.pasteboardItem() }
+        guard !pasteboardItems.isEmpty else {
+            return
+        }
+
+        writeToPasteboard(pasteboardItems)
     }
 
     func copyScreenshotImageToPasteboardAndHistory(_ image: ClipboardImage) {
         let item = ClipboardItem.image(image)
-        writeToPasteboard(item)
+        restore(item)
         add(item)
     }
 
-    private func writeToPasteboard(_ item: ClipboardItem) {
+    private func writeToPasteboard(_ items: [NSPasteboardItem]) {
         isSelfWriting = true
         pasteboard.clearContents()
-
-        switch item {
-        case .text(let text, id: _, timestamp: _):
-            pasteboard.setString(text, forType: .string)
-        case .image(let image, id: _, timestamp: _):
-            _ = image.write(to: pasteboard)
-        }
+        pasteboard.writeObjects(items)
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
             self?.isSelfWriting = false

@@ -5,6 +5,8 @@ struct MenuBarView: View {
     @ObservedObject var store: ClipboardStore
     @ObservedObject var downloadsStore: DownloadsStore
     @State private var selectedTab: MenuBarTab = .clipboard
+    @State private var clipboardSelection = ItemSelection<UUID>()
+    @State private var downloadsSelection = ItemSelection<String>()
     @Namespace private var tabSelectionNamespace
     @FocusState private var isSearchFocused: Bool
 
@@ -29,6 +31,12 @@ struct MenuBarView: View {
         .onChange(of: selectedTab) { _ in
             focusSearchIfNeeded()
         }
+        .onChange(of: store.items.map(\.id)) { ids in
+            clipboardSelection.reconcile(withAvailableIDs: ids)
+        }
+        .onChange(of: downloadsStore.items.map(\.id)) { ids in
+            downloadsSelection.reconcile(withAvailableIDs: ids)
+        }
     }
 
     private var header: some View {
@@ -44,6 +52,7 @@ struct MenuBarView: View {
             }
             .animation(tabTransitionAnimation, value: selectedTab)
 
+            selectionModeButton
             modeToggle
         }
         .padding(.horizontal, 16)
@@ -139,6 +148,8 @@ struct MenuBarView: View {
     private func modeButton(_ tab: MenuBarTab, systemImage: String, help: String) -> some View {
         Button {
             withAnimation(tabTransitionAnimation) {
+                clipboardSelection.setActive(false)
+                downloadsSelection.setActive(false)
                 selectedTab = tab
             }
         } label: {
@@ -158,6 +169,61 @@ struct MenuBarView: View {
             }
         }
         .help(help)
+    }
+
+    private var selectionModeButton: some View {
+        Button {
+            withAnimation(selectionAnimation) {
+                switch selectedTab {
+                case .clipboard:
+                    clipboardSelection.setActive(!clipboardSelection.isActive)
+                case .downloads:
+                    downloadsSelection.setActive(!downloadsSelection.isActive)
+                }
+            }
+        } label: {
+            Text(isSelectingCurrentTab ? "Done" : "Select")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(isSelectingCurrentTab ? Color.accentColor : Color.primary)
+                .padding(.horizontal, 10)
+                .frame(height: 30)
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .disabled(isSelectionButtonDisabled)
+        .opacity(isSelectionButtonDisabled ? 0.45 : 1)
+        .clipStackGlass(cornerRadius: 999, interactive: !isSelectionButtonDisabled)
+        .overlay {
+            Capsule()
+                .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+        }
+        .help(isSelectingCurrentTab ? "Finish selecting" : "Select multiple items")
+    }
+
+    private var isSelectingCurrentTab: Bool {
+        switch selectedTab {
+        case .clipboard:
+            return clipboardSelection.isActive
+        case .downloads:
+            return downloadsSelection.isActive
+        }
+    }
+
+    private var isCurrentTabEmpty: Bool {
+        switch selectedTab {
+        case .clipboard:
+            return store.items.isEmpty
+        case .downloads:
+            return downloadsStore.items.isEmpty
+        }
+    }
+
+    private var isSelectionButtonDisabled: Bool {
+        isCurrentTabEmpty && !isSelectingCurrentTab
+    }
+
+    private var selectionAnimation: Animation {
+        .spring(response: 0.30, dampingFraction: 0.84, blendDuration: 0.06)
     }
 
     private var tabTransitionAnimation: Animation {
@@ -214,7 +280,7 @@ struct MenuBarView: View {
                 historyList
             }
         case .downloads:
-            DownloadsListView(items: downloadsStore.items)
+            DownloadsListView(items: downloadsStore.items, selection: $downloadsSelection)
         }
     }
 
@@ -254,6 +320,24 @@ struct MenuBarView: View {
                 ForEach(displayItems) { item in
                     ClipboardItemRow(
                         item: item,
+                        isSelectionMode: clipboardSelection.isActive,
+                        isSelected: clipboardSelection.contains(item.id),
+                        dragPayloads: {
+                            clipboardSelection
+                                .dragItems(startingWith: item.id, from: store.items, id: \.id)
+                                .compactMap { draggedItem in
+                                    guard let writer = draggedItem.pasteboardItem() else {
+                                        return nil
+                                    }
+
+                                    return ItemDragPayload(writer: writer, preview: draggedItem.dragPreview)
+                                }
+                        },
+                        onToggleSelection: {
+                            withAnimation(selectionAnimation) {
+                                clipboardSelection.toggle(item.id)
+                            }
+                        },
                         onCopy: {
                             copyToClipboard(item)
                         },
@@ -298,14 +382,38 @@ struct MenuBarView: View {
 
     private var footer: some View {
         HStack {
-            GlassFooterButton(title: "Clear All", systemImage: "trash", isDisabled: isClearDisabled) {
-                clearCurrentTab()
+            if isSelectingCurrentTab {
+                GlassFooterButton(
+                    title: selectionCoversCurrentItems ? "Deselect All" : "Select All",
+                    systemImage: selectionCoversCurrentItems ? "circle" : "checkmark.circle"
+                ) {
+                    toggleSelectAll()
+                }
+            } else {
+                GlassFooterButton(title: "Clear All", systemImage: "trash", isDisabled: isClearDisabled) {
+                    clearCurrentTab()
+                }
             }
 
             Spacer()
 
-            GlassFooterButton(title: "Quit", systemImage: "power") {
-                NSApplication.shared.terminate(nil)
+            if isSelectingCurrentTab {
+                switch selectedTab {
+                case .clipboard:
+                    GlassFooterButton(
+                        title: clipboardSelection.count == 1 ? "Copy 1" : "Copy \(clipboardSelection.count)",
+                        systemImage: "doc.on.doc",
+                        isDisabled: clipboardSelection.count == 0
+                    ) {
+                        copySelectedClipboardItems()
+                    }
+                case .downloads:
+                    SelectionStatusBadge(count: downloadsSelection.count)
+                }
+            } else {
+                GlassFooterButton(title: "Quit", systemImage: "power") {
+                    NSApplication.shared.terminate(nil)
+                }
             }
         }
         .padding(.horizontal, 16)
@@ -318,6 +426,45 @@ struct MenuBarView: View {
             return store.items.isEmpty
         case .downloads:
             return downloadsStore.items.isEmpty
+        }
+    }
+
+    private var selectionCoversCurrentItems: Bool {
+        switch selectedTab {
+        case .clipboard:
+            return !displayItems.isEmpty && displayItems.allSatisfy { clipboardSelection.contains($0.id) }
+        case .downloads:
+            return !downloadsStore.items.isEmpty && downloadsStore.items.allSatisfy { downloadsSelection.contains($0.id) }
+        }
+    }
+
+    private func toggleSelectAll() {
+        withAnimation(selectionAnimation) {
+            switch selectedTab {
+            case .clipboard:
+                if selectionCoversCurrentItems {
+                    for id in displayItems.map(\.id) where clipboardSelection.contains(id) {
+                        clipboardSelection.toggle(id)
+                    }
+                } else {
+                    clipboardSelection.selectAll(displayItems.map(\.id))
+                }
+            case .downloads:
+                if selectionCoversCurrentItems {
+                    downloadsSelection.selectAll([])
+                } else {
+                    downloadsSelection.selectAll(downloadsStore.items.map(\.id))
+                }
+            }
+        }
+    }
+
+    private func copySelectedClipboardItems() {
+        let items = clipboardSelection.selectedItems(from: store.items, id: \.id)
+        store.restore(items)
+
+        withAnimation(selectionAnimation) {
+            clipboardSelection.setActive(false)
         }
     }
 
@@ -344,6 +491,10 @@ private enum MenuBarTab: Equatable {
 
 private struct ClipboardItemRow: View {
     let item: ClipboardItem
+    let isSelectionMode: Bool
+    let isSelected: Bool
+    let dragPayloads: () -> [ItemDragPayload]
+    let onToggleSelection: () -> Void
     let onCopy: () -> Void
     let onDelete: () -> Void
 
@@ -359,9 +510,22 @@ private struct ClipboardItemRow: View {
                     return
                 }
 
-                copyWithFeedback()
+                if isSelectionMode {
+                    onToggleSelection()
+                } else {
+                    copyWithFeedback()
+                }
             } label: {
                 HStack(spacing: 12) {
+                    if isSelectionMode {
+                        RoundSelectionIndicator(isSelected: isSelected)
+                            .transition(
+                                .move(edge: .leading)
+                                    .combined(with: .opacity)
+                                    .combined(with: .scale(scale: 0.82))
+                            )
+                    }
+
                     thumbnail
                         .overlay {
                             copyOverlay
@@ -387,16 +551,27 @@ private struct ClipboardItemRow: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help("Copy")
+            .help(isSelectionMode ? (isSelected ? "Deselect" : "Select") : "Copy")
 
-            deleteButton
-                .padding(.trailing, 9)
+            if !isSelectionMode {
+                deleteButton
+                    .padding(.trailing, 9)
+                    .transition(.opacity.combined(with: .scale(scale: 0.9)))
+            }
         }
         .contentShape(Rectangle())
         .background {
             RoundedRectangle(cornerRadius: 7, style: .continuous)
                 .fill(rowFill)
         }
+        .overlay {
+            if isSelectionMode {
+                MultiItemDragSource(payloads: dragPayloads, onClick: onToggleSelection)
+                    .accessibilityHidden(true)
+            }
+        }
+        .animation(.spring(response: 0.30, dampingFraction: 0.84), value: isSelectionMode)
+        .animation(.easeInOut(duration: 0.16), value: isSelected)
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.16)) {
                 isHovered = hovering
@@ -408,7 +583,11 @@ private struct ClipboardItemRow: View {
     }
 
     private var rowFill: Color {
-        isHovered
+        if isSelected {
+            return Color.accentColor.opacity(0.14)
+        }
+
+        return isHovered
             ? Color(nsColor: .labelColor).opacity(0.10)
             : .clear
     }
@@ -463,7 +642,7 @@ private struct ClipboardItemRow: View {
     }
 
     private var copyOverlayOpacity: Double {
-        isHovered || isCopyFeedbackVisible ? 1 : 0
+        !isSelectionMode && (isHovered || isCopyFeedbackVisible) ? 1 : 0
     }
 
     private var copyOverlayFill: Color {
@@ -554,6 +733,23 @@ private struct ClipboardItemRow: View {
         formatter.dateStyle = .none
         return formatter
     }()
+}
+
+private struct SelectionStatusBadge: View {
+    let count: Int
+
+    var body: some View {
+        Label(
+            count == 0 ? "Select items" : (count == 1 ? "Drag 1 item" : "Drag \(count) items"),
+            systemImage: "hand.draw"
+        )
+        .font(.system(size: 12, weight: .semibold))
+        .foregroundStyle(count == 0 ? Color.secondary : Color.primary)
+        .padding(.horizontal, 12)
+        .frame(minHeight: 34)
+        .background(.quaternary.opacity(0.45), in: Capsule())
+        .accessibilityLabel(count == 0 ? "No downloads selected" : "\(count) downloads selected for dragging")
+    }
 }
 
 private struct GlassFooterButton: View {

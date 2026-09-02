@@ -28,6 +28,8 @@
 		60000000000000000000000D /* SemanticIndexTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500000000000000000000010 /* SemanticIndexTests.swift */; };
 		600000000000000000000012 /* DownloadsStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500000000000000000000015 /* DownloadsStoreTests.swift */; };
 		600000000000000000000014 /* InstantAreaCaptureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500000000000000000000017 /* InstantAreaCaptureTests.swift */; };
+		600000000000000000000015 /* ItemSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500000000000000000000018 /* ItemSelection.swift */; };
+		600000000000000000000016 /* ItemSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500000000000000000000019 /* ItemSelectionTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -63,6 +65,8 @@
 		500000000000000000000010 /* SemanticIndexTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SemanticIndexTests.swift; sourceTree = "<group>"; };
 		500000000000000000000015 /* DownloadsStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsStoreTests.swift; sourceTree = "<group>"; };
 		500000000000000000000017 /* InstantAreaCaptureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantAreaCaptureTests.swift; sourceTree = "<group>"; };
+		500000000000000000000018 /* ItemSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemSelection.swift; sourceTree = "<group>"; };
+		500000000000000000000019 /* ItemSelectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemSelectionTests.swift; sourceTree = "<group>"; };
 		50000000000000000000000C /* ClipStack.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ClipStack.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		50000000000000000000000D /* ClipStackTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ClipStackTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -112,6 +116,7 @@
 				500000000000000000000007 /* MenuBarView.swift */,
 				500000000000000000000014 /* DownloadsListView.swift */,
 				500000000000000000000016 /* InstantAreaCapture.swift */,
+				500000000000000000000018 /* ItemSelection.swift */,
 				50000000000000000000000B /* Info.plist */,
 			);
 			path = ClipStack;
@@ -126,6 +131,7 @@
 				500000000000000000000010 /* SemanticIndexTests.swift */,
 				500000000000000000000015 /* DownloadsStoreTests.swift */,
 				500000000000000000000017 /* InstantAreaCaptureTests.swift */,
+				500000000000000000000019 /* ItemSelectionTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -252,6 +258,7 @@
 				600000000000000000000007 /* MenuBarView.swift in Sources */,
 				600000000000000000000011 /* DownloadsListView.swift in Sources */,
 				600000000000000000000013 /* InstantAreaCapture.swift in Sources */,
+				600000000000000000000015 /* ItemSelection.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -265,6 +272,7 @@
 				60000000000000000000000D /* SemanticIndexTests.swift in Sources */,
 				600000000000000000000012 /* DownloadsStoreTests.swift in Sources */,
 				600000000000000000000014 /* InstantAreaCaptureTests.swift in Sources */,
+				600000000000000000000016 /* ItemSelectionTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

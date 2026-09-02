@@ -144,20 +144,28 @@ struct ClipboardImage: @unchecked Sendable {
     }
 
     func write(to pasteboard: NSPasteboard) -> Bool {
-        if let data = payloadData() {
-            let payloadEncoding = encoding ?? Self.encoding(for: data) ?? .png
-            let wrotePrimary = pasteboard.setData(data, forType: payloadEncoding.pasteboardType)
-
-            guard payloadEncoding != .tiff,
-                  let tiffData = Self.tiffData(from: data) else {
-                return wrotePrimary
-            }
-
-            let wroteFallback = pasteboard.setData(tiffData, forType: .tiff)
-            return wrotePrimary || wroteFallback
+        guard let item = pasteboardItem() else {
+            return pasteboard.writeObjects([preview])
         }
 
-        return pasteboard.writeObjects([preview])
+        return pasteboard.writeObjects([item])
+    }
+
+    func pasteboardItem() -> NSPasteboardItem? {
+        guard let data = payloadData() else {
+            return nil
+        }
+
+        let payloadEncoding = encoding ?? Self.encoding(for: data) ?? .png
+        let item = NSPasteboardItem()
+        item.setData(data, forType: payloadEncoding.pasteboardType)
+
+        if payloadEncoding != .tiff,
+           let tiffData = Self.tiffData(from: data) {
+            item.setData(tiffData, forType: .tiff)
+        }
+
+        return item
     }
 
     private static func makePreview(from data: Data, maxPixelSize: Int) -> (image: NSImage, pixelWidth: Int, pixelHeight: Int)? {
@@ -348,6 +356,29 @@ enum ClipboardItem: Identifiable, @unchecked Sendable {
                 && lhs.fingerprint == rhs.fingerprint
         default:
             return false
+        }
+    }
+
+    func pasteboardItem() -> NSPasteboardItem? {
+        switch self {
+        case .text(let text, id: _, timestamp: _):
+            let item = NSPasteboardItem()
+            item.setString(text, forType: .string)
+            return item
+        case .image(let image, id: _, timestamp: _):
+            return image.pasteboardItem()
+        }
+    }
+
+    var dragPreview: NSImage {
+        switch self {
+        case .text:
+            return NSImage(
+                systemSymbolName: "doc.text",
+                accessibilityDescription: "Text clipboard item"
+            ) ?? NSImage(size: NSSize(width: 44, height: 44))
+        case .image(let image, id: _, timestamp: _):
+            return image.preview
         }
     }
 }

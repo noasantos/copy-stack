@@ -239,6 +239,31 @@ final class ClipboardStoreTests: XCTestCase {
         XCTAssertEqual(NSPasteboard.general.string(forType: .string), "hello")
     }
 
+    func testRestoreMultipleItemsWritesEveryItemInOrder() throws {
+        let store = ClipboardStore()
+        let imageData = try XCTUnwrap(NSImage.testImage(width: 12, height: 8).encodedData(using: .png))
+        let image = try XCTUnwrap(ClipboardImage.make(data: imageData, encoding: .png))
+
+        store.restore([.text("first"), .image(image), .text("third")])
+
+        let pasteboardItems = try XCTUnwrap(NSPasteboard.general.pasteboardItems)
+        XCTAssertEqual(pasteboardItems.count, 3)
+        XCTAssertEqual(pasteboardItems[0].string(forType: .string), "first")
+        XCTAssertEqual(pasteboardItems[1].data(forType: .png), imageData)
+        XCTAssertEqual(pasteboardItems[2].string(forType: .string), "third")
+    }
+
+    func testRestoringEmptySelectionDoesNotChangePasteboard() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString("existing", forType: .string)
+        let store = ClipboardStore()
+
+        store.restore([])
+
+        XCTAssertEqual(NSPasteboard.general.string(forType: .string), "existing")
+        XCTAssertFalse(store.isSelfWriting)
+    }
+
     func testImageItemAdded() {
         let store = ClipboardStore()
         let image = NSImage.onePixelTestImage()
