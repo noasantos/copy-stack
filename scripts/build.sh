@@ -17,6 +17,9 @@ echo "  ClipStack build — v${VERSION}"
 echo "  Universal binary: arm64 + x86_64"
 echo "════════════════════════════════════════"
 
+echo "→ Running release lint..."
+bash "scripts/lint-release.sh"
+
 # Clean previous build artifacts for this version
 rm -rf "${BUILD_DIR}"
 mkdir -p "${BUILD_DIR}/output"
@@ -30,6 +33,7 @@ xcodebuild \
   ONLY_ACTIVE_ARCH=NO \
   ARCHS="arm64 x86_64" \
   VALID_ARCHS="arm64 x86_64" \
+  ENABLE_DEBUG_DYLIB=NO \
   MARKETING_VERSION="${VERSION}" \
   CODE_SIGN_IDENTITY="-" \
   CODE_SIGN_STYLE=Manual \
@@ -49,8 +53,19 @@ echo "→ Verifying universal binary..."
 ARCHS_FOUND=$(lipo -archs "${APP_PATH}/Contents/MacOS/${APP_NAME}" 2>/dev/null || true)
 echo "   Architectures: ${ARCHS_FOUND}"
 if [[ "${ARCHS_FOUND}" != *"arm64"* ]] || [[ "${ARCHS_FOUND}" != *"x86_64"* ]]; then
-  echo "WARNING: Binary is not universal. Found: ${ARCHS_FOUND}"
-  echo "Continuing — for personal use this may be acceptable."
+  echo "ERROR: Binary is not universal. Found: ${ARCHS_FOUND}"
+  exit 1
+fi
+
+if find "${APP_PATH}/Contents/MacOS" -maxdepth 1 \( -name '*debug*.dylib' -o -name '__preview.dylib' \) | grep -q .; then
+  echo "ERROR: Debug or preview dylibs found in release bundle."
+  exit 1
+fi
+
+BUILT_VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "${APP_PATH}/Contents/Info.plist")
+if [[ "${BUILT_VERSION}" != "${VERSION}" ]]; then
+  echo "ERROR: Built version ${BUILT_VERSION} does not match requested version ${VERSION}."
+  exit 1
 fi
 
 echo "→ Ad-hoc signing..."

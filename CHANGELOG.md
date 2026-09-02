@@ -2,10 +2,16 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-02
+
 ### Added
 
 - Register `Shift + Command + S` as a global shortcut for instant native area capture to the Desktop, clipboard, and ClipStack history without the floating thumbnail.
 - Add animated multi-selection to Clipboard and Downloads, including type-preserving clipboard copy and native multi-item drag sessions.
+
+### Changed
+
+- Optimize release builds and omit Xcode debug and preview dylibs from distributed archives.
 
 ## [0.2.1] - 2026-08-05
 

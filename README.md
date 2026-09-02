@@ -18,7 +18,7 @@ Pass a version only when you want a specific release instead of latest:
 curl -fsSL https://raw.githubusercontent.com/noasantos/copy-stack/main/install.sh | bash -s -- 0.1.0
 ```
 
-Supported release versions remain installable by passing the version explicitly. Current supported versions are `0.1.0`, `0.1.1`, `0.2.0`, and `0.2.1`.
+Supported release versions remain installable by passing the version explicitly. Current supported versions are `0.1.0`, `0.1.1`, `0.2.0`, `0.2.1`, and `0.3.0`.
 
 ## Update
 
@@ -32,7 +32,9 @@ curl -fsSL https://raw.githubusercontent.com/noasantos/copy-stack/main/install.s
 
 - Monitors clipboard for text and images
 - Auto-copies screenshots
-- Shows recent top-level Downloads files in an ephemeral tray for dragging into other apps
+- Captures a selected screen area instantly with `Shift + Command + S`
+- Supports selecting, copying, and dragging multiple clipboard items
+- Shows recent top-level Downloads files in an ephemeral tray with multi-item drag
 - Stores local clipboard history
 - Restore any previous clipboard item from the menu bar
 - No network access. No cloud sync. No account. No telemetry.
