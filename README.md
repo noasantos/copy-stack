@@ -18,7 +18,7 @@ Pass a version only when you want a specific release instead of latest:
 curl -fsSL https://raw.githubusercontent.com/noasantos/copy-stack/main/install.sh | bash -s -- 0.1.0
 ```
 
-Supported release versions remain installable by passing the version explicitly. Current supported versions are `0.1.0`, `0.1.1`, `0.2.0`, `0.2.1`, `0.3.0`, and `0.4.0`.
+Supported release versions remain installable by passing the version explicitly. Current supported versions are `0.1.0`, `0.1.1`, `0.2.0`, `0.2.1`, `0.3.0`, `0.4.0`, and `0.4.1`.
 
 ## Update
 
@@ -40,7 +40,7 @@ curl -fsSL https://raw.githubusercontent.com/noasantos/copy-stack/main/install.s
 - Restore any previous clipboard item from the menu bar
 - No network access. No cloud sync. No account. No telemetry.
 
-The quick-paste panel asks for macOS Accessibility access the first time it needs to locate another app's text cursor and paste the selected item. It opens only when an editable text field is focused and exposes its insertion caret; it does nothing over non-editable content.
+The quick-paste panel asks for macOS Accessibility access the first time it needs to locate another app's text cursor and paste the selected item. It opens only when an editable text field is focused and exposes its insertion caret; it does nothing over non-editable content. Because ClipStack is ad-hoc signed, macOS can require Accessibility to be turned off and on once after an app update.
 
 ## Privacy
 
@@ -70,7 +70,7 @@ rm -f ~/Library/Preferences/com.clipstack.app.plist
 
 ## Security note
 
-ClipStack is not signed with an Apple Developer ID certificate. The installer removes the macOS quarantine flag and applies an ad-hoc signature. This is intentional and standard practice for free developer tools distributed outside the App Store. Review install.sh before running it if you have concerns.
+ClipStack is not signed with an Apple Developer ID certificate. Release archives contain an ad-hoc signed app; the installer verifies and preserves that signature after removing the macOS quarantine flag. Review install.sh before running it if you have concerns.
 
 ## Build from source
 

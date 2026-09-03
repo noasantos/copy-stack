@@ -1,7 +1,7 @@
 import Carbon
 import os
 
-private let quickPasteHotKeyLogger = Logger(subsystem: "com.startapse.ClipStack", category: "quick-paste")
+private let quickPasteHotKeyLogger = Logger(subsystem: "com.clipstack.app", category: "quick-paste")
 
 final class GlobalQuickPasteHotKey: @unchecked Sendable {
     static let hotKeyID = EventHotKeyID(signature: 0x4353544B, id: 2)
@@ -42,6 +42,7 @@ final class GlobalQuickPasteHotKey: @unchecked Sendable {
                 guard GlobalQuickPasteHotKey.matches(event: event) else {
                     return OSStatus(eventNotHandledErr)
                 }
+                quickPasteHotKeyLogger.info("Shift-Command-V received")
                 Task { @MainActor in
                     owner.action()
                 }
@@ -73,6 +74,7 @@ final class GlobalQuickPasteHotKey: @unchecked Sendable {
             return false
         }
 
+        quickPasteHotKeyLogger.info("Shift-Command-V registered")
         return true
     }
 

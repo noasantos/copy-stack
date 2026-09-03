@@ -1,8 +1,10 @@
 import AppKit
 import Foundation
-import ServiceManagement
 import SwiftUI
 import UserNotifications
+import os
+
+private let appLogger = Logger(subsystem: "com.clipstack.app", category: "lifecycle")
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -25,10 +27,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         NSApp.setActivationPolicy(.accessory)
+        appLogger.info("Accessibility trusted at launch: \(AccessibilityTextCaretLocator.isTrusted(prompt: false))")
         requestNotificationPermission()
-#if !DEBUG
-        registerLoginItem()
-#endif
         configureStatusItem()
 
         let clipboardMonitor = ClipboardMonitor(store: store)
@@ -76,12 +76,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func requestNotificationPermission() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert]) { _, _ in }
-    }
-
-    private func registerLoginItem() {
-        let service = SMAppService.mainApp
-        guard service.status == .notRegistered else { return }
-        try? service.register()
     }
 
     private func configureStatusItem() {

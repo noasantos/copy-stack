@@ -8,7 +8,7 @@ set -euo pipefail
 # Source: https://github.com/noasantos/copy-stack
 # ──────────────────────────────────────────────────────────────
 
-LATEST_VERSION="0.4.0"   # ← Update this on each release
+LATEST_VERSION="0.4.1"   # ← Update this on each release
 VERSION="${CLIPSTACK_VERSION:-${1:-${LATEST_VERSION}}}"
 APP_NAME="ClipStack"
 REPO="noasantos/copy-stack"
@@ -33,9 +33,12 @@ case "${VERSION}" in
   0.4.0)
     EXPECTED_SHA256="74a6e8f25a6e527d8617051eed03ca1c13dcc64eb893c77983786a452c9098ab"
     ;;
+  0.4.1)
+    EXPECTED_SHA256="7326237bcd5ecb4c26096b2dbd487eb3f5d3968a9785ebb5f7f35e6a6aa2db28"
+    ;;
   *)
     echo "  ✗ ERROR: Unsupported ClipStack version: ${VERSION}" >&2
-    echo "  Supported versions: 0.1.0, 0.1.1, 0.2.0, 0.2.1, 0.3.0, 0.4.0" >&2
+    echo "  Supported versions: 0.1.0, 0.1.1, 0.2.0, 0.2.1, 0.3.0, 0.4.0, 0.4.1" >&2
     exit 1
     ;;
 esac
@@ -129,11 +132,11 @@ fi
 
 info "Installing to ${INSTALL_DIR}..."
 # Try without sudo first; fall back to sudo if permission denied
-if cp -r "${APP_SRC}" "${INSTALL_DIR}/" 2>/dev/null; then
+if ditto "${APP_SRC}" "${APP_DEST}" 2>/dev/null; then
   success "Copied to ${INSTALL_DIR}"
 else
   warn "Permission denied. Retrying with sudo..."
-  sudo cp -r "${APP_SRC}" "${INSTALL_DIR}/"
+  sudo ditto "${APP_SRC}" "${APP_DEST}"
   success "Copied to ${INSTALL_DIR} (via sudo)"
 fi
 
@@ -147,20 +150,18 @@ info "Removing quarantine attribute..."
 xattr -dr com.apple.quarantine "${APP_DEST}" 2>/dev/null || true
 success "Quarantine removed"
 
-# ── Ad-hoc Sign ───────────────────────────────────────────────
-# Apple Silicon requires all arm64 binaries to be signed (even ad-hoc)
-# before the kernel will execute them. This step is mandatory on M1/M2/M3/M4.
-# Source: https://eclecticlight.co/2019/01/17/code-signing-for-the-concerned-3-signing-an-app/
-info "Applying local ad-hoc code signature..."
-codesign --deep --force --sign - "${APP_DEST}" 2>/dev/null && \
-  success "Ad-hoc signature applied" || \
-  warn "codesign not available — app may fail on Apple Silicon. Install Xcode Command Line Tools: xcode-select --install"
+# ── Verify signed release ─────────────────────────────────────
+# Preserve the exact ad-hoc signature shipped in the verified archive. Re-signing
+# during every update changes the identity macOS associates with Accessibility.
+info "Verifying release signature..."
+codesign --verify --deep --strict "${APP_DEST}" 2>/dev/null || \
+  abort "The installed app has an invalid code signature."
+success "Signature valid"
 
-# ── Verify ────────────────────────────────────────────────────
-info "Verifying installation..."
-codesign --verify --deep "${APP_DEST}" 2>/dev/null && \
-  success "Signature valid" || \
-  warn "Signature verification skipped (Xcode CLI tools may not be installed)"
+LSREGISTER="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
+if [ -x "${LSREGISTER}" ]; then
+  "${LSREGISTER}" -f "${APP_DEST}"
+fi
 
 # ── Launch at Login (LaunchAgent) ─────────────────────────────
 LAUNCH_AGENTS_DIR="${HOME}/Library/LaunchAgents"
@@ -202,12 +203,16 @@ fi
 
 # ── Launch app immediately ────────────────────────────────────
 info "Launching ClipStack..."
-if pgrep -x "${APP_NAME}" >/dev/null 2>&1; then
-  success "ClipStack launched by its background agent"
-else
-  open "${APP_DEST}" || true
-  success "ClipStack launched — look for the clipboard icon in your menu bar"
-fi
+APP_EXEC="${APP_DEST}/Contents/MacOS/${APP_NAME}"
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  if pgrep -f "^${APP_EXEC}$" >/dev/null 2>&1; then
+    success "ClipStack launched by its background agent"
+    break
+  fi
+  sleep 1
+done
+pgrep -f "^${APP_EXEC}$" >/dev/null 2>&1 || \
+  abort "ClipStack did not start through its background agent."
 
 # ── Done ──────────────────────────────────────────────────────
 echo ""

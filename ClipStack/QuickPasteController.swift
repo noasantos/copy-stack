@@ -3,7 +3,7 @@ import Carbon
 import SwiftUI
 import os
 
-private let quickPasteLogger = Logger(subsystem: "com.startapse.ClipStack", category: "quick-paste")
+private let quickPasteLogger = Logger(subsystem: "com.clipstack.app", category: "quick-paste")
 
 @MainActor
 final class QuickPasteController: NSObject {
@@ -16,6 +16,7 @@ final class QuickPasteController: NSObject {
     private var targetApplication: NSRunningApplication?
     private var localKeyMonitor: Any?
     private var globalClickMonitor: Any?
+    private var hasRequestedAccessibilityPermission = false
 
     init(store: ClipboardStore) {
         self.store = store
@@ -37,18 +38,28 @@ final class QuickPasteController: NSObject {
 
     private func present() {
         guard let targetApplication = Self.frontmostTargetApplication() else {
+            quickPasteLogger.notice("Quick paste ignored because no external frontmost application was found")
             return
         }
         self.targetApplication = targetApplication
 
+        guard AccessibilityTextCaretLocator.isTrusted(prompt: false) else {
+            quickPasteLogger.notice("Quick paste requires Accessibility permission")
+            requestAccessibilityPermission()
+            self.targetApplication = nil
+            return
+        }
+
         guard let anchor = caretLocator.anchorRect(
             applicationPID: targetApplication.processIdentifier,
-            requestPermission: true
+            requestPermission: false
         ) else {
+            quickPasteLogger.notice("Quick paste ignored because the focused element has no supported text caret")
             self.targetApplication = nil
             return
         }
         guard let screen = Self.screen(containing: anchor) else {
+            quickPasteLogger.error("Quick paste could not resolve a screen for the focused text caret")
             self.targetApplication = nil
             return
         }
@@ -78,6 +89,31 @@ final class QuickPasteController: NSObject {
         panel.makeKeyAndOrderFront(nil)
         self.panel = panel
         installEventMonitors()
+        quickPasteLogger.info("Quick paste panel opened")
+    }
+
+    private func requestAccessibilityPermission() {
+        if !hasRequestedAccessibilityPermission {
+            hasRequestedAccessibilityPermission = true
+            _ = AccessibilityTextCaretLocator.isTrusted(prompt: true)
+            return
+        }
+
+        let alert = NSAlert()
+        alert.messageText = "Allow ClipStack to access the text cursor"
+        alert.informativeText = "Open Accessibility settings and turn ClipStack on. If it is already on after an update, turn it off and on once."
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "Open Accessibility Settings")
+        alert.addButton(withTitle: "Cancel")
+
+        NSApp.activate(ignoringOtherApps: true)
+        guard alert.runModal() == .alertFirstButtonReturn,
+              let settingsURL = URL(
+                string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+              ) else {
+            return
+        }
+        NSWorkspace.shared.open(settingsURL)
     }
 
     private func paste(_ item: ClipboardItem) {

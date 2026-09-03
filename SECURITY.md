@@ -13,7 +13,7 @@ ClipStack is an MVP local-only clipboard manager. The following limitations are 
 - Clipboard history is stored unencrypted at `~/Library/Application Support/ClipStack/`, with metadata in `history.json` and image payloads in `Images/`.
 - The Downloads tray observes top-level files in `~/Downloads` and keeps recent file references in memory only. It does not persist Downloads metadata or copy downloaded files into ClipStack storage.
 - The app does not use the App Sandbox.
-- Quick Paste optionally uses macOS Accessibility access to read only the focused text caret bounds and to send a local `Command + V` keystroke after the user selects a history item. Without access, Quick Paste does not open; restoring items from the regular menu bar remains available.
+- Quick Paste optionally uses macOS Accessibility access to read only the focused text caret bounds and to send a local `Command + V` keystroke after the user selects a history item. Without access, Quick Paste does not open; restoring items from the regular menu bar remains available. Because releases are ad-hoc signed, macOS may require the grant to be toggled off and on after an update.
 - Release builds are ad-hoc signed and do not use Hardened Runtime.
 - Builds are not notarized with Apple Developer ID.
 - The installer uses a `curl | bash` flow.
