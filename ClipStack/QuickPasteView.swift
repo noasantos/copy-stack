@@ -11,12 +11,12 @@ final class QuickPasteSession: ObservableObject {
 
     func reset(with sourceItems: [ClipboardItem]) {
         visibleLimit = min(Self.pageSize, sourceItems.count)
-        selectedID = visibleItems(from: sourceItems).last?.id
+        selectedID = visibleItems(from: sourceItems).first?.id
         keyboardNavigationRevision = 0
     }
 
     func visibleItems(from sourceItems: [ClipboardItem]) -> [ClipboardItem] {
-        Array(sourceItems.prefix(visibleLimit).reversed())
+        Array(sourceItems.prefix(visibleLimit))
     }
 
     func hasEarlierItems(in sourceItems: [ClipboardItem]) -> Bool {
@@ -41,7 +41,7 @@ final class QuickPasteSession: ObservableObject {
             return
         }
 
-        selectedID = items.last?.id
+        selectedID = items.first?.id
     }
 
     func moveSelection(by offset: Int, within items: [ClipboardItem]) {
@@ -52,7 +52,7 @@ final class QuickPasteSession: ObservableObject {
 
         guard let selectedID,
               let selectedIndex = items.firstIndex(where: { $0.id == selectedID }) else {
-            self.selectedID = items.last?.id
+            self.selectedID = items.first?.id
             keyboardNavigationRevision += 1
             return
         }
@@ -63,7 +63,7 @@ final class QuickPasteSession: ObservableObject {
     }
 
     func selectedItem(in items: [ClipboardItem]) -> ClipboardItem? {
-        items.first(where: { $0.id == selectedID }) ?? items.last
+        items.first(where: { $0.id == selectedID }) ?? items.first
     }
 }
 
@@ -110,12 +110,8 @@ struct QuickPasteView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             ScrollViewReader { proxy in
-                ScrollView {
+                ScrollView(.vertical, showsIndicators: false) {
                     LazyVStack(spacing: 3) {
-                        if session.hasEarlierItems(in: store.items) {
-                            loadEarlierButton(proxy: proxy)
-                        }
-
                         ForEach(items) { item in
                             QuickPasteRow(
                                 item: item,
@@ -125,15 +121,17 @@ struct QuickPasteView: View {
                                 }
                             )
                             .id(item.id)
+                            .scaleEffect(x: 1, y: -1)
+                        }
+
+                        if session.hasEarlierItems(in: store.items) {
+                            loadEarlierButton
+                                .scaleEffect(x: 1, y: -1)
                         }
                     }
                     .padding(7)
                 }
-                .onAppear {
-                    if let selectedID = session.selectedID {
-                        proxy.scrollTo(selectedID, anchor: .bottom)
-                    }
-                }
+                .scaleEffect(x: 1, y: -1)
                 .onChange(of: session.keyboardNavigationRevision) { _ in
                     guard let selectedID = session.selectedID else {
                         return
@@ -146,17 +144,11 @@ struct QuickPasteView: View {
         }
     }
 
-    private func loadEarlierButton(proxy: ScrollViewProxy) -> some View {
-        let anchorID = items.first?.id
+    private var loadEarlierButton: some View {
         let count = session.nextPageCount(totalCount: store.items.count)
 
         return Button {
             session.loadEarlierItems(totalCount: store.items.count)
-            if let anchorID {
-                DispatchQueue.main.async {
-                    proxy.scrollTo(anchorID, anchor: .top)
-                }
-            }
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "clock.arrow.circlepath")

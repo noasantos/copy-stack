@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Make quick paste use a bottom-origin scroll layout so the newest clipboard item is visible immediately and older items are revealed by scrolling upward.
+
 ## [0.4.0] - 2026-09-03
 
 ### Added

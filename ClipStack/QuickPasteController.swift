@@ -128,10 +128,10 @@ final class QuickPasteController: NSObject {
 
             switch Int(event.keyCode) {
             case kVK_UpArrow:
-                session.moveSelection(by: -1, within: visibleItems)
+                session.moveSelection(by: 1, within: visibleItems)
                 return nil
             case kVK_DownArrow:
-                session.moveSelection(by: 1, within: visibleItems)
+                session.moveSelection(by: -1, within: visibleItems)
                 return nil
             case kVK_Return, kVK_ANSI_KeypadEnter:
                 if let item = session.selectedItem(in: visibleItems) {

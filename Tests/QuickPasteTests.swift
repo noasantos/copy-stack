@@ -105,15 +105,15 @@ final class QuickPasteTests: XCTestCase {
         XCTAssertEqual(collapsedCaret, CGRect(x: 240, y: 200, width: 1, height: 18))
     }
 
-    func testHistoryStartsWithTenNewestAndDisplaysNewestAtBottom() {
+    func testHistoryStartsWithTenNewestInBottomOriginOrder() {
         let sourceItems = (0..<12).map { ClipboardItem.text("Item \($0)") }
         let session = QuickPasteSession()
         session.reset(with: sourceItems)
 
         let visible = session.visibleItems(from: sourceItems)
         XCTAssertEqual(visible.count, 10)
-        XCTAssertEqual(visible.first?.id, sourceItems[9].id)
-        XCTAssertEqual(visible.last?.id, sourceItems[0].id)
+        XCTAssertEqual(visible.first?.id, sourceItems[0].id)
+        XCTAssertEqual(visible.last?.id, sourceItems[9].id)
         XCTAssertEqual(session.selectedID, sourceItems[0].id)
         XCTAssertTrue(session.hasEarlierItems(in: sourceItems))
 
@@ -131,13 +131,13 @@ final class QuickPasteTests: XCTestCase {
 
         XCTAssertEqual(session.selectedID, newest.id)
 
-        session.moveSelection(by: -1, within: visible)
-        XCTAssertEqual(session.selectedID, older.id)
-
-        session.moveSelection(by: -1, within: visible)
+        session.moveSelection(by: 1, within: visible)
         XCTAssertEqual(session.selectedID, older.id)
 
         session.moveSelection(by: 1, within: visible)
+        XCTAssertEqual(session.selectedID, older.id)
+
+        session.moveSelection(by: -1, within: visible)
         XCTAssertEqual(session.selectedID, newest.id)
     }
 }
