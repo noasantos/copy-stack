@@ -34,6 +34,10 @@
 		600000000000000000000018 /* QuickPasteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50000000000000000000001B /* QuickPasteView.swift */; };
 		600000000000000000000019 /* QuickPasteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50000000000000000000001C /* QuickPasteTests.swift */; };
 		60000000000000000000001A /* QuickPastePlacement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50000000000000000000001D /* QuickPastePlacement.swift */; };
+		600000000000000000000030 /* TextCaretResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500000000000000000000030 /* TextCaretResolver.swift */; };
+		600000000000000000000031 /* TextRunMeasurer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500000000000000000000031 /* TextRunMeasurer.swift */; };
+		600000000000000000000033 /* TextCaretGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500000000000000000000033 /* TextCaretGeometry.swift */; };
+		600000000000000000000032 /* TextCaretResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500000000000000000000032 /* TextCaretResolverTests.swift */; };
 		60000000000000000000001B /* AccessibilityTextCaretLocator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50000000000000000000001E /* AccessibilityTextCaretLocator.swift */; };
 		60000000000000000000001C /* GlobalQuickPasteHotKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50000000000000000000001F /* GlobalQuickPasteHotKey.swift */; };
 /* End PBXBuildFile section */
@@ -77,6 +81,10 @@
 		50000000000000000000001B /* QuickPasteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickPasteView.swift; sourceTree = "<group>"; };
 		50000000000000000000001C /* QuickPasteTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickPasteTests.swift; sourceTree = "<group>"; };
 		50000000000000000000001D /* QuickPastePlacement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickPastePlacement.swift; sourceTree = "<group>"; };
+		500000000000000000000030 /* TextCaretResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextCaretResolver.swift; sourceTree = "<group>"; };
+		500000000000000000000031 /* TextRunMeasurer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextRunMeasurer.swift; sourceTree = "<group>"; };
+		500000000000000000000033 /* TextCaretGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextCaretGeometry.swift; sourceTree = "<group>"; };
+		500000000000000000000032 /* TextCaretResolverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextCaretResolverTests.swift; sourceTree = "<group>"; };
 		50000000000000000000001E /* AccessibilityTextCaretLocator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityTextCaretLocator.swift; sourceTree = "<group>"; };
 		50000000000000000000001F /* GlobalQuickPasteHotKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalQuickPasteHotKey.swift; sourceTree = "<group>"; };
 		50000000000000000000000C /* ClipStack.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ClipStack.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -131,6 +139,9 @@
 				500000000000000000000018 /* ItemSelection.swift */,
 				50000000000000000000001A /* QuickPasteController.swift */,
 				50000000000000000000001D /* QuickPastePlacement.swift */,
+				500000000000000000000033 /* TextCaretGeometry.swift */,
+				500000000000000000000030 /* TextCaretResolver.swift */,
+				500000000000000000000031 /* TextRunMeasurer.swift */,
 				50000000000000000000001E /* AccessibilityTextCaretLocator.swift */,
 				50000000000000000000001F /* GlobalQuickPasteHotKey.swift */,
 				50000000000000000000001B /* QuickPasteView.swift */,
@@ -150,6 +161,7 @@
 				500000000000000000000017 /* InstantAreaCaptureTests.swift */,
 				500000000000000000000019 /* ItemSelectionTests.swift */,
 				50000000000000000000001C /* QuickPasteTests.swift */,
+				500000000000000000000032 /* TextCaretResolverTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -279,6 +291,9 @@
 				600000000000000000000015 /* ItemSelection.swift in Sources */,
 				600000000000000000000017 /* QuickPasteController.swift in Sources */,
 				60000000000000000000001A /* QuickPastePlacement.swift in Sources */,
+				600000000000000000000033 /* TextCaretGeometry.swift in Sources */,
+				600000000000000000000030 /* TextCaretResolver.swift in Sources */,
+				600000000000000000000031 /* TextRunMeasurer.swift in Sources */,
 				60000000000000000000001B /* AccessibilityTextCaretLocator.swift in Sources */,
 				60000000000000000000001C /* GlobalQuickPasteHotKey.swift in Sources */,
 				600000000000000000000018 /* QuickPasteView.swift in Sources */,
@@ -297,6 +312,7 @@
 				600000000000000000000014 /* InstantAreaCaptureTests.swift in Sources */,
 				600000000000000000000016 /* ItemSelectionTests.swift in Sources */,
 				600000000000000000000019 /* QuickPasteTests.swift in Sources */,
+				600000000000000000000032 /* TextCaretResolverTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -429,7 +445,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 0.4.1;
+				MARKETING_VERSION = 0.4.2;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = NO;
@@ -482,7 +498,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 0.4.1;
+				MARKETING_VERSION = 0.4.2;
 				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.clipstack.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";

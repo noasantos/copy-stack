@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-09-03
+
+### Fixed
+
+- Resolve the quick-paste caret at any offset inside a line, not only at the start, end, or on an empty line. Native fields now derive the caret from the neighbouring character bounds and correct the zero-length bounds AppKit reports one line too high; browser-based fields (Codex, Chromium, Electron) that expose no per-character geometry now measure the caret inside the paragraph that contains it, so the panel opens after clicking in the middle of existing text.
+- Reject caret candidates that describe a whole line, the whole field, another element, or non-finite coordinates instead of opening the panel at a misleading position.
+- Close the quick-paste panel on any loss of focus: clicking, scrolling, or typing outside it, switching apps or Spaces, hiding or minimizing the target, screen changes, sleep, and keys the panel does not handle. The panel no longer follows the user to other Spaces.
+- Show the newest clipboard items next to the caret when the panel opens below it, with arrow keys walking away from the caret in both directions.
+- Log which accessibility path resolved the caret and why candidates were rejected, using geometry only, so caret problems can be diagnosed from the unified log.
+
 ## [0.4.1] - 2026-09-03
 
 ### Fixed

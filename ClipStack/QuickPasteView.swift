@@ -78,6 +78,12 @@ struct QuickPasteView: View {
         session.visibleItems(from: store.items)
     }
 
+    // Newest items sit next to the caret: at the bottom when the panel opens above it,
+    // at the top when it opens below. The list is flipped only for the former.
+    private var flip: CGFloat {
+        direction == .above ? -1 : 1
+    }
+
     var body: some View {
         ZStack {
             QuickPasteBubbleShape(direction: direction)
@@ -121,17 +127,17 @@ struct QuickPasteView: View {
                                 }
                             )
                             .id(item.id)
-                            .scaleEffect(x: 1, y: -1)
+                            .scaleEffect(x: 1, y: flip)
                         }
 
                         if session.hasEarlierItems(in: store.items) {
                             loadEarlierButton
-                                .scaleEffect(x: 1, y: -1)
+                                .scaleEffect(x: 1, y: flip)
                         }
                     }
                     .padding(7)
                 }
-                .scaleEffect(x: 1, y: -1)
+                .scaleEffect(x: 1, y: flip)
                 .onChange(of: session.keyboardNavigationRevision) { _ in
                     guard let selectedID = session.selectedID else {
                         return

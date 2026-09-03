@@ -1,48 +1,65 @@
 import AppKit
 import ApplicationServices
 
+struct TextCaretAnchorReport {
+    /// Caret rect in AppKit screen coordinates, or `nil` when no trustworthy caret exists.
+    let rect: CGRect?
+    let path: TextCaretPath?
+    let trace: [String]
+}
+
 @MainActor
 struct AccessibilityTextCaretLocator {
-    func anchorRect(applicationPID: pid_t?, requestPermission: Bool) -> CGRect? {
+    var measurer: any TextRunMeasuring = TextKitRunMeasurer()
+
+    func locate(applicationPID: pid_t?, requestPermission: Bool) -> TextCaretAnchorReport {
         guard Self.isTrusted(prompt: requestPermission) else {
-            return nil
+            return TextCaretAnchorReport(rect: nil, path: nil, trace: ["accessibility access is not granted"])
         }
 
         let applicationElement = applicationPID.map(AXUIElementCreateApplication)
             ?? AXUIElementCreateSystemWide()
-        var focusedValue: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(
-            applicationElement,
-            kAXFocusedUIElementAttribute as CFString,
-            &focusedValue
-        ) == .success,
-        let focusedValue else {
-            return nil
+        guard let focusedElement = Self.focusedElement(of: applicationElement) else {
+            return TextCaretAnchorReport(rect: nil, path: nil, trace: ["no focused accessibility element"])
+        }
+        let role = Self.role(of: focusedElement) ?? "unknown"
+        guard Self.isEditableTextRole(role) else {
+            return TextCaretAnchorReport(rect: nil, path: nil, trace: ["focused element role \(role) is not an editable text field"])
         }
 
-        let focusedElement = focusedValue as! AXUIElement
-        guard Self.isEditableTextElement(focusedElement) else {
-            return nil
-        }
+        var trace: [String] = []
         var element: AXUIElement? = focusedElement
-
-        for _ in 0..<6 {
+        for level in 0..<6 {
             guard let currentElement = element else {
                 break
             }
-
-            if let rect = Self.webCaretRect(in: currentElement)
-                ?? Self.standardCaretRect(in: currentElement) {
-                return Self.appKitRect(fromQuartzRect: rect)
+            let geometry = AccessibilityTextGeometry(element: currentElement, field: focusedElement)
+            // Ancestors are only consulted for document-level text markers; their character
+            // ranges do not describe the focused field.
+            if level > 0, geometry.selectedMarkerRange() == nil {
+                element = Self.parent(of: currentElement)
+                continue
             }
 
+            var resolver = TextCaretResolver(source: geometry, measurer: measurer)
+            resolver.includeCharacterRanges = level == 0
+            let report = resolver.resolve()
+            trace += report.trace.map { level == 0 ? $0 : "ancestor \(level): \($0)" }
+
+            if let resolution = report.resolution {
+                guard let anchor = Self.appKitRect(fromQuartzRect: resolution.rect) else {
+                    trace.append("caret \(TextCaretGeometry.describe(resolution.rect)) could not be converted to AppKit coordinates")
+                    return TextCaretAnchorReport(rect: nil, path: resolution.path, trace: trace)
+                }
+                return TextCaretAnchorReport(rect: anchor, path: resolution.path, trace: trace)
+            }
             element = Self.parent(of: currentElement)
         }
 
-        return nil
+        return TextCaretAnchorReport(rect: nil, path: nil, trace: trace)
     }
 
-    static func isTrusted(prompt: Bool) -> Bool {
+    nonisolated static func isTrusted(prompt: Bool) -> Bool {
         guard prompt else {
             return AXIsProcessTrusted()
         }
@@ -51,7 +68,7 @@ struct AccessibilityTextCaretLocator {
         return AXIsProcessTrustedWithOptions(options)
     }
 
-    static func appKitRect(fromQuartzRect rect: CGRect, primaryScreenMaxY: CGFloat? = nil) -> CGRect? {
+    nonisolated static func appKitRect(fromQuartzRect rect: CGRect, primaryScreenMaxY: CGFloat? = nil) -> CGRect? {
         guard rect.origin.x.isFinite,
               rect.origin.y.isFinite,
               rect.width.isFinite,
@@ -74,264 +91,208 @@ struct AccessibilityTextCaretLocator {
         )
     }
 
-    static func isEditableTextRole(_ role: String) -> Bool {
+    nonisolated static func isEditableTextRole(_ role: String) -> Bool {
         ["AXTextField", "AXTextArea", "AXComboBox"].contains(role)
     }
 
-    private static func standardCaretRect(in element: AXUIElement) -> CGRect? {
-        var selectedRangeValue: CFTypeRef?
+    nonisolated static func focusedElement(of applicationElement: AXUIElement) -> AXUIElement? {
+        var focusedValue: CFTypeRef?
         guard AXUIElementCopyAttributeValue(
-            element,
-            kAXSelectedTextRangeAttribute as CFString,
-            &selectedRangeValue
+            applicationElement,
+            kAXFocusedUIElementAttribute as CFString,
+            &focusedValue
         ) == .success,
-        let selectedRangeValue else {
+        let focusedValue,
+        CFGetTypeID(focusedValue) == AXUIElementGetTypeID() else {
             return nil
         }
-
-        guard CFGetTypeID(selectedRangeValue) == AXValueGetTypeID() else {
-            return nil
-        }
-
-        var selectedRange = CFRange()
-        guard AXValueGetValue(selectedRangeValue as! AXValue, .cfRange, &selectedRange) else {
-            return nil
-        }
-
-        var caretRange = CFRange(
-            location: selectedRange.location + selectedRange.length,
-            length: 0
-        )
-        guard let caretRangeValue = AXValueCreate(.cfRange, &caretRange) else {
-            return nil
-        }
-
-        var boundsValue: CFTypeRef?
-        guard AXUIElementCopyParameterizedAttributeValue(
-            element,
-            kAXBoundsForRangeParameterizedAttribute as CFString,
-            caretRangeValue,
-            &boundsValue
-        ) == .success,
-        let boundsValue else {
-            return nil
-        }
-
-        guard let bounds = rect(from: boundsValue) else {
-            return nil
-        }
-        return caretRect(at: bounds.minX, characterBounds: bounds)
+        return (focusedValue as! AXUIElement)
     }
 
-    private static func webCaretRect(in element: AXUIElement) -> CGRect? {
-        var markerRangeValue: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(
-            element,
-            "AXSelectedTextMarkerRange" as CFString,
-            &markerRangeValue
-        ) == .success,
-        let markerRangeValue else {
+    nonisolated static func role(of element: AXUIElement) -> String? {
+        var roleValue: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(element, kAXRoleAttribute as CFString, &roleValue) == .success else {
             return nil
         }
+        return roleValue as? String
+    }
 
-        guard CFGetTypeID(markerRangeValue) == AXTextMarkerRangeGetTypeID() else {
+    nonisolated static func parent(of element: AXUIElement) -> AXUIElement? {
+        var parentValue: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(element, kAXParentAttribute as CFString, &parentValue) == .success,
+              let parentValue,
+              CFGetTypeID(parentValue) == AXUIElementGetTypeID() else {
             return nil
         }
+        return (parentValue as! AXUIElement)
+    }
+}
 
-        let markerRange = markerRangeValue as! AXTextMarkerRange
-        let caretMarker = AXTextMarkerRangeCopyEndMarker(markerRange)
+/// `TextCaretGeometrySource` backed by the Accessibility API of one element inside a focused field.
+struct AccessibilityTextGeometry: TextCaretGeometrySource {
+    typealias Marker = AXTextMarker
+    typealias Element = AXUIElement
 
-        let collapsedRange = AXTextMarkerRangeCreate(nil, caretMarker, caretMarker)
-        if let collapsedBounds = markerBounds(for: collapsedRange, in: element),
-           let caret = caretRect(at: collapsedBounds.minX, characterBounds: collapsedBounds) {
-            return caret
-        }
+    let element: AXUIElement
+    let field: AXUIElement
 
-        if let previousMarker = adjacentMarker(
-            named: "AXPreviousTextMarkerForTextMarker",
-            from: caretMarker,
-            in: element
-        ),
-        let characterBounds = markerBounds(
-            from: previousMarker,
-            to: caretMarker,
-            in: element
-        ),
-        let caret = caretRect(at: characterBounds.maxX, characterBounds: characterBounds) {
-            return caret
-        }
+    var fieldFrame: CGRect? {
+        frame(of: field)
+    }
 
-        if let nextMarker = adjacentMarker(
-            named: "AXNextTextMarkerForTextMarker",
-            from: caretMarker,
-            in: element
-        ),
-        let characterBounds = markerBounds(
-            from: caretMarker,
-            to: nextMarker,
-            in: element
-        ),
-        let caret = caretRect(at: characterBounds.minX, characterBounds: characterBounds) {
-            return caret
-        }
+    func selectedTextRange() -> CFRange? {
+        Self.rangeValue(attribute(kAXSelectedTextRangeAttribute))
+    }
 
-        guard let selectedRange = selectedTextRange(in: element),
-              selectedRange.location == 0,
-              selectedRange.length == 0,
-              let lineBounds = markerBounds(for: markerRange, in: element),
-              let fieldBounds = elementFrame(element),
-              lineBounds.intersects(fieldBounds),
-              lineBounds.height > 0 else {
+    func characterCount() -> Int? {
+        attribute(kAXNumberOfCharactersAttribute) as? Int
+    }
+
+    func bounds(for range: CFRange) -> CGRect? {
+        guard let parameter = Self.rangeParameter(range) else {
             return nil
         }
+        return Self.rectValue(parameterized(kAXBoundsForRangeParameterizedAttribute, parameter))
+    }
 
-        return CGRect(
-            x: lineBounds.minX,
-            y: lineBounds.minY,
-            width: 1,
-            height: lineBounds.height
+    func string(for range: CFRange) -> String? {
+        guard let parameter = Self.rangeParameter(range) else {
+            return nil
+        }
+        return Self.stringValue(parameterized(kAXStringForRangeParameterizedAttribute, parameter))
+    }
+
+    func selectedMarkerRange() -> TextMarkerRange<AXTextMarker>? {
+        guard let value = attribute("AXSelectedTextMarkerRange"),
+              CFGetTypeID(value) == AXTextMarkerRangeGetTypeID() else {
+            return nil
+        }
+        let range = value as! AXTextMarkerRange
+        return TextMarkerRange(
+            start: AXTextMarkerRangeCopyStartMarker(range),
+            end: AXTextMarkerRangeCopyEndMarker(range)
         )
     }
 
-    private static func selectedTextRange(in element: AXUIElement) -> CFRange? {
-        var rangeValue: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(
-            element,
-            kAXSelectedTextRangeAttribute as CFString,
-            &rangeValue
-        ) == .success,
-        let rangeValue,
-        CFGetTypeID(rangeValue) == AXValueGetTypeID() else {
+    func marker(before marker: AXTextMarker) -> AXTextMarker? {
+        Self.markerValue(parameterized("AXPreviousTextMarkerForTextMarker", marker))
+    }
+
+    func marker(after marker: AXTextMarker) -> AXTextMarker? {
+        Self.markerValue(parameterized("AXNextTextMarkerForTextMarker", marker))
+    }
+
+    func bounds(for range: TextMarkerRange<AXTextMarker>) -> CGRect? {
+        let markerRange = AXTextMarkerRangeCreate(nil, range.start, range.end)
+        return Self.rectValue(parameterized("AXBoundsForTextMarkerRange", markerRange))
+    }
+
+    func string(for range: TextMarkerRange<AXTextMarker>) -> String? {
+        let markerRange = AXTextMarkerRangeCreate(nil, range.start, range.end)
+        return Self.stringValue(parameterized("AXStringForTextMarkerRange", markerRange))
+    }
+
+    func element(containing marker: AXTextMarker) -> AXUIElement? {
+        Self.elementValue(parameterized("AXUIElementForTextMarker", marker))
+    }
+
+    func frame(of element: AXUIElement) -> CGRect? {
+        var frameValue: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(element, "AXFrame" as CFString, &frameValue) == .success else {
             return nil
         }
+        return Self.rectValue(frameValue)
+    }
 
+    func markerRange(of element: AXUIElement) -> TextMarkerRange<AXTextMarker>? {
+        guard let value = parameterized("AXTextMarkerRangeForUIElement", element),
+              CFGetTypeID(value) == AXTextMarkerRangeGetTypeID() else {
+            return nil
+        }
+        let range = value as! AXTextMarkerRange
+        return TextMarkerRange(
+            start: AXTextMarkerRangeCopyStartMarker(range),
+            end: AXTextMarkerRangeCopyEndMarker(range)
+        )
+    }
+
+    func parent(of element: AXUIElement) -> AXUIElement? {
+        AccessibilityTextCaretLocator.parent(of: element)
+    }
+
+    func isField(_ element: AXUIElement) -> Bool {
+        CFEqual(element, field)
+    }
+
+    private func attribute(_ name: String) -> CFTypeRef? {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(element, name as CFString, &value) == .success else {
+            return nil
+        }
+        return value
+    }
+
+    private func parameterized(_ name: String, _ parameter: CFTypeRef) -> CFTypeRef? {
+        var value: CFTypeRef?
+        guard AXUIElementCopyParameterizedAttributeValue(element, name as CFString, parameter, &value) == .success else {
+            return nil
+        }
+        return value
+    }
+
+    private static func rangeParameter(_ range: CFRange) -> AXValue? {
+        var mutableRange = range
+        return AXValueCreate(.cfRange, &mutableRange)
+    }
+
+    private static func rangeValue(_ value: CFTypeRef?) -> CFRange? {
+        guard let value, CFGetTypeID(value) == AXValueGetTypeID() else {
+            return nil
+        }
         var range = CFRange()
-        guard AXValueGetValue(rangeValue as! AXValue, .cfRange, &range) else {
+        guard AXValueGetValue(value as! AXValue, .cfRange, &range) else {
             return nil
         }
         return range
     }
 
-    static func caretRect(at x: CGFloat, characterBounds: CGRect) -> CGRect? {
-        guard characterBounds.origin.x.isFinite,
-              characterBounds.origin.y.isFinite,
-              characterBounds.width.isFinite,
-              characterBounds.height.isFinite,
-              characterBounds.height > 0,
-              characterBounds.width >= 0,
-              characterBounds.width <= 128,
-              x.isFinite else {
+    /// Empty rects are how AX reports "no geometry"; a zero-width rect with height is a caret.
+    private static func rectValue(_ value: CFTypeRef?) -> CGRect? {
+        guard let value, CFGetTypeID(value) == AXValueGetTypeID() else {
             return nil
         }
-
-        return CGRect(
-            x: x,
-            y: characterBounds.minY,
-            width: 1,
-            height: characterBounds.height
-        )
-    }
-
-    private static func adjacentMarker(
-        named attribute: String,
-        from marker: AXTextMarker,
-        in element: AXUIElement
-    ) -> AXTextMarker? {
-        var markerValue: CFTypeRef?
-        guard AXUIElementCopyParameterizedAttributeValue(
-            element,
-            attribute as CFString,
-            marker,
-            &markerValue
-        ) == .success,
-        let markerValue,
-        CFGetTypeID(markerValue) == AXTextMarkerGetTypeID() else {
-            return nil
-        }
-
-        return (markerValue as! AXTextMarker)
-    }
-
-    private static func markerBounds(
-        from startMarker: AXTextMarker,
-        to endMarker: AXTextMarker,
-        in element: AXUIElement
-    ) -> CGRect? {
-        let range = AXTextMarkerRangeCreate(nil, startMarker, endMarker)
-        return markerBounds(for: range, in: element)
-    }
-
-    private static func markerBounds(
-        for range: AXTextMarkerRange,
-        in element: AXUIElement
-    ) -> CGRect? {
-        var boundsValue: CFTypeRef?
-        guard AXUIElementCopyParameterizedAttributeValue(
-            element,
-            "AXBoundsForTextMarkerRange" as CFString,
-            range,
-            &boundsValue
-        ) == .success,
-        let boundsValue else {
-            return nil
-        }
-
-        return rect(from: boundsValue)
-    }
-
-    private static func elementFrame(_ element: AXUIElement) -> CGRect? {
-        var frameValue: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(
-            element,
-            "AXFrame" as CFString,
-            &frameValue
-        ) == .success,
-        let frameValue else {
-            return nil
-        }
-
-        return rect(from: frameValue)
-    }
-
-    private static func isEditableTextElement(_ element: AXUIElement) -> Bool {
-        var roleValue: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(
-            element,
-            kAXRoleAttribute as CFString,
-            &roleValue
-        ) == .success,
-        let role = roleValue as? String else {
-            return false
-        }
-
-        return isEditableTextRole(role)
-    }
-
-    private static func parent(of element: AXUIElement) -> AXUIElement? {
-        var parentValue: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(
-            element,
-            kAXParentAttribute as CFString,
-            &parentValue
-        ) == .success,
-        let parentValue,
-        CFGetTypeID(parentValue) == AXUIElementGetTypeID() else {
-            return nil
-        }
-
-        return (parentValue as! AXUIElement)
-    }
-
-    private static func rect(from value: CFTypeRef) -> CGRect? {
-        guard CFGetTypeID(value) == AXValueGetTypeID() else {
-            return nil
-        }
-
         var rect = CGRect.zero
         guard AXValueGetValue(value as! AXValue, .cgRect, &rect),
               rect.width > 0 || rect.height > 0 else {
             return nil
         }
         return rect
+    }
+
+    private static func stringValue(_ value: CFTypeRef?) -> String? {
+        guard let value else {
+            return nil
+        }
+        if let string = value as? String {
+            return string
+        }
+        if let attributed = value as? NSAttributedString {
+            return attributed.string
+        }
+        return nil
+    }
+
+    private static func markerValue(_ value: CFTypeRef?) -> AXTextMarker? {
+        guard let value, CFGetTypeID(value) == AXTextMarkerGetTypeID() else {
+            return nil
+        }
+        return (value as! AXTextMarker)
+    }
+
+    private static func elementValue(_ value: CFTypeRef?) -> AXUIElement? {
+        guard let value, CFGetTypeID(value) == AXUIElementGetTypeID() else {
+            return nil
+        }
+        return (value as! AXUIElement)
     }
 }
