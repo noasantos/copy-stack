@@ -33,11 +33,14 @@ curl -fsSL https://raw.githubusercontent.com/noasantos/copy-stack/main/install.s
 - Monitors clipboard for text and images
 - Auto-copies screenshots
 - Captures a selected screen area instantly with `Shift + Command + S`
+- Opens clipboard history beside the active text cursor with `Shift + Command + V`
 - Supports selecting, copying, and dragging multiple clipboard items
 - Shows recent top-level Downloads files in an ephemeral tray with multi-item drag
 - Stores local clipboard history
 - Restore any previous clipboard item from the menu bar
 - No network access. No cloud sync. No account. No telemetry.
+
+The quick-paste panel asks for macOS Accessibility access the first time it needs to locate another app's text cursor and paste the selected item. It opens only when an editable text field is focused and exposes its insertion caret; it does nothing over non-editable content.
 
 ## Privacy
 

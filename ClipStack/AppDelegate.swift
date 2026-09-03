@@ -13,6 +13,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var screenshotWatcher: ScreenshotWatcher?
     private var areaCaptureController: InstantAreaCaptureController?
     private var areaCaptureHotKey: GlobalAreaCaptureHotKey?
+    private var quickPasteController: QuickPasteController?
+    private var quickPasteHotKey: GlobalQuickPasteHotKey?
     private var downloadsWatcher: DownloadsWatcher?
     private var statusItem: NSStatusItem?
     private var popover: NSPopover?
@@ -24,7 +26,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         NSApp.setActivationPolicy(.accessory)
         requestNotificationPermission()
+#if !DEBUG
         registerLoginItem()
+#endif
         configureStatusItem()
 
         let clipboardMonitor = ClipboardMonitor(store: store)
@@ -45,6 +49,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self.areaCaptureHotKey = areaCaptureHotKey
         }
 
+        let quickPasteController = QuickPasteController(store: store)
+        self.quickPasteController = quickPasteController
+
+        let quickPasteHotKey = GlobalQuickPasteHotKey { [weak self, weak quickPasteController] in
+            self?.closePopover()
+            quickPasteController?.toggle()
+        }
+        if quickPasteHotKey.register() {
+            self.quickPasteHotKey = quickPasteHotKey
+        }
+
         let downloadsWatcher = DownloadsWatcher(store: downloadsStore)
         downloadsWatcher.start()
         self.downloadsWatcher = downloadsWatcher
@@ -53,6 +68,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         clipboardMonitor?.stop()
         areaCaptureHotKey?.unregister()
+        quickPasteHotKey?.unregister()
+        quickPasteController?.dismiss()
         screenshotWatcher?.stop()
         downloadsWatcher?.stop()
     }
@@ -102,6 +119,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if popover.isShown {
             closePopover()
         } else {
+            quickPasteController?.dismiss()
             NSApp.activate(ignoringOtherApps: true)
             popover.show(relativeTo: sender.bounds, of: sender, preferredEdge: .minY)
         }
@@ -116,7 +134,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
-private final class ClearHostingController<Content: View>: NSHostingController<Content> {
+final class ClearHostingController<Content: View>: NSHostingController<Content> {
     override func loadView() {
         super.loadView()
         view.wantsLayer = true
