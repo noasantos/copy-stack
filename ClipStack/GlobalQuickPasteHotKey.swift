@@ -4,7 +4,7 @@ import os
 private let quickPasteHotKeyLogger = Logger(subsystem: "com.startapse.ClipStack", category: "quick-paste")
 
 final class GlobalQuickPasteHotKey: @unchecked Sendable {
-    private static let hotKeyID = EventHotKeyID(signature: 0x4353544B, id: 2)
+    static let hotKeyID = EventHotKeyID(signature: 0x4353544B, id: 2)
     static let keyCode = UInt32(kVK_ANSI_V)
     static let modifiers = UInt32(cmdKey | shiftKey)
 
@@ -31,14 +31,17 @@ final class GlobalQuickPasteHotKey: @unchecked Sendable {
         let userData = Unmanaged.passUnretained(self).toOpaque()
         let handlerStatus = InstallEventHandler(
             GetApplicationEventTarget(),
-            { _, _, userData in
-                guard let userData else {
+            { _, event, userData in
+                guard let event, let userData else {
                     return OSStatus(eventNotHandledErr)
                 }
 
                 let owner = Unmanaged<GlobalQuickPasteHotKey>
                     .fromOpaque(userData)
                     .takeUnretainedValue()
+                guard GlobalQuickPasteHotKey.matches(event: event) else {
+                    return OSStatus(eventNotHandledErr)
+                }
                 Task { @MainActor in
                     owner.action()
                 }
@@ -83,5 +86,23 @@ final class GlobalQuickPasteHotKey: @unchecked Sendable {
             RemoveEventHandler(eventHandler)
             self.eventHandler = nil
         }
+    }
+
+    static func matches(id: EventHotKeyID) -> Bool {
+        id.signature == hotKeyID.signature && id.id == hotKeyID.id
+    }
+
+    private static func matches(event: EventRef) -> Bool {
+        var receivedID = EventHotKeyID()
+        let status = GetEventParameter(
+            event,
+            EventParamName(kEventParamDirectObject),
+            EventParamType(typeEventHotKeyID),
+            nil,
+            MemoryLayout<EventHotKeyID>.size,
+            nil,
+            &receivedID
+        )
+        return status == noErr && matches(id: receivedID)
     }
 }

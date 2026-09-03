@@ -78,6 +78,11 @@ final class InstantAreaCaptureTests: XCTestCase {
         XCTAssertEqual(GlobalAreaCaptureHotKey.modifiers, UInt32(cmdKey | shiftKey))
     }
 
+    func testAreaCaptureHotKeyIgnoresQuickPasteEvents() {
+        XCTAssertTrue(GlobalAreaCaptureHotKey.matches(id: GlobalAreaCaptureHotKey.hotKeyID))
+        XCTAssertFalse(GlobalAreaCaptureHotKey.matches(id: GlobalQuickPasteHotKey.hotKeyID))
+    }
+
     func testDefaultDestinationIsUniquePNGOnDesktop() {
         let firstURL = InstantAreaCaptureController.makeDestinationURL()
         let secondURL = InstantAreaCaptureController.makeDestinationURL()

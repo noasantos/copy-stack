@@ -4,7 +4,7 @@
 
 ### Added
 
-- Add a `Shift + Command + V` quick-paste panel that opens beside the active text cursor, chooses above or below based on available screen space, scrolls long history, and pastes the selected item back into the originating app.
+- Add a `Shift + Command + V` quick-paste panel that anchors to the exact text caret, chooses above or below based on available screen space, presents the 10 newest items with the latest at the bottom, loads earlier items on demand, and pastes the selection back into the originating app.
 
 ## [0.3.0] - 2026-09-02
 

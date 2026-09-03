@@ -10,6 +10,11 @@ final class QuickPasteTests: XCTestCase {
         XCTAssertNotEqual(GlobalQuickPasteHotKey.modifiers, UInt32(cmdKey))
     }
 
+    func testQuickPasteHotKeyIgnoresAreaCaptureEvents() {
+        XCTAssertTrue(GlobalQuickPasteHotKey.matches(id: GlobalQuickPasteHotKey.hotKeyID))
+        XCTAssertFalse(GlobalQuickPasteHotKey.matches(id: GlobalAreaCaptureHotKey.hotKeyID))
+    }
+
     func testPlacementOpensBelowWhenRequestedHeightFits() {
         let placement = QuickPastePanelPlacement.make(
             anchor: CGRect(x: 500, y: 600, width: 2, height: 20),
@@ -74,19 +79,65 @@ final class QuickPasteTests: XCTestCase {
         XCTAssertFalse(AccessibilityTextCaretLocator.isEditableTextRole("AXWebArea"))
     }
 
-    func testKeyboardSelectionStopsAtListEdges() {
-        let first = ClipboardItem.text("First")
-        let second = ClipboardItem.text("Second")
+    func testCaretUsesCharacterEdgeAndRejectsWholeLineBounds() throws {
+        let characterBounds = CGRect(x: 120, y: 200, width: 9, height: 18)
+        let caret = try XCTUnwrap(
+            AccessibilityTextCaretLocator.caretRect(
+                at: characterBounds.maxX,
+                characterBounds: characterBounds
+            )
+        )
+
+        XCTAssertEqual(caret, CGRect(x: 129, y: 200, width: 1, height: 18))
+        XCTAssertNil(
+            AccessibilityTextCaretLocator.caretRect(
+                at: 500,
+                characterBounds: CGRect(x: 100, y: 200, width: 700, height: 18)
+            )
+        )
+
+        let collapsedCaret = try XCTUnwrap(
+            AccessibilityTextCaretLocator.caretRect(
+                at: 240,
+                characterBounds: CGRect(x: 240, y: 200, width: 0, height: 18)
+            )
+        )
+        XCTAssertEqual(collapsedCaret, CGRect(x: 240, y: 200, width: 1, height: 18))
+    }
+
+    func testHistoryStartsWithTenNewestAndDisplaysNewestAtBottom() {
+        let sourceItems = (0..<12).map { ClipboardItem.text("Item \($0)") }
         let session = QuickPasteSession()
-        session.reset(with: [first, second])
+        session.reset(with: sourceItems)
 
-        session.moveSelection(by: 1, within: [first, second])
-        XCTAssertEqual(session.selectedID, second.id)
+        let visible = session.visibleItems(from: sourceItems)
+        XCTAssertEqual(visible.count, 10)
+        XCTAssertEqual(visible.first?.id, sourceItems[9].id)
+        XCTAssertEqual(visible.last?.id, sourceItems[0].id)
+        XCTAssertEqual(session.selectedID, sourceItems[0].id)
+        XCTAssertTrue(session.hasEarlierItems(in: sourceItems))
 
-        session.moveSelection(by: 1, within: [first, second])
-        XCTAssertEqual(session.selectedID, second.id)
+        session.loadEarlierItems(totalCount: sourceItems.count)
+        XCTAssertEqual(session.visibleItems(from: sourceItems).count, 12)
+        XCTAssertFalse(session.hasEarlierItems(in: sourceItems))
+    }
 
-        session.moveSelection(by: -1, within: [first, second])
-        XCTAssertEqual(session.selectedID, first.id)
+    func testKeyboardSelectionStopsAtListEdges() {
+        let newest = ClipboardItem.text("Newest")
+        let older = ClipboardItem.text("Older")
+        let session = QuickPasteSession()
+        session.reset(with: [newest, older])
+        let visible = session.visibleItems(from: [newest, older])
+
+        XCTAssertEqual(session.selectedID, newest.id)
+
+        session.moveSelection(by: -1, within: visible)
+        XCTAssertEqual(session.selectedID, older.id)
+
+        session.moveSelection(by: -1, within: visible)
+        XCTAssertEqual(session.selectedID, older.id)
+
+        session.moveSelection(by: 1, within: visible)
+        XCTAssertEqual(session.selectedID, newest.id)
     }
 }

@@ -7,7 +7,7 @@ private let quickPasteLogger = Logger(subsystem: "com.startapse.ClipStack", cate
 
 @MainActor
 final class QuickPasteController: NSObject {
-    static let requestedPanelSize = CGSize(width: 330, height: 340)
+    static let requestedPanelSize = CGSize(width: 320, height: 300)
 
     private let store: ClipboardStore
     private let caretLocator = AccessibilityTextCaretLocator()
@@ -128,13 +128,13 @@ final class QuickPasteController: NSObject {
 
             switch Int(event.keyCode) {
             case kVK_UpArrow:
-                session.moveSelection(by: -1, within: store.items)
+                session.moveSelection(by: -1, within: visibleItems)
                 return nil
             case kVK_DownArrow:
-                session.moveSelection(by: 1, within: store.items)
+                session.moveSelection(by: 1, within: visibleItems)
                 return nil
             case kVK_Return, kVK_ANSI_KeypadEnter:
-                if let item = session.selectedItem(in: store.items) {
+                if let item = session.selectedItem(in: visibleItems) {
                     paste(item)
                 }
                 return nil
@@ -153,6 +153,10 @@ final class QuickPasteController: NSObject {
                 self?.dismiss()
             }
         }
+    }
+
+    private var visibleItems: [ClipboardItem] {
+        session.visibleItems(from: store.items)
     }
 
     private func removeEventMonitors() {
