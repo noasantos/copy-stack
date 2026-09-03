@@ -2,9 +2,15 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-03
+
 ### Added
 
 - Add a `Shift + Command + V` quick-paste panel that anchors to the exact text caret, chooses above or below based on available screen space, presents the 10 newest items with the latest at the bottom, loads earlier items on demand, and pastes the selection back into the originating app.
+
+### Fixed
+
+- Route global hot-key events by identifier so quick paste and area capture cannot swallow each other's shortcuts.
 
 ## [0.3.0] - 2026-09-02
 

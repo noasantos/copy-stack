@@ -18,7 +18,7 @@ Pass a version only when you want a specific release instead of latest:
 curl -fsSL https://raw.githubusercontent.com/noasantos/copy-stack/main/install.sh | bash -s -- 0.1.0
 ```
 
-Supported release versions remain installable by passing the version explicitly. Current supported versions are `0.1.0`, `0.1.1`, `0.2.0`, `0.2.1`, and `0.3.0`.
+Supported release versions remain installable by passing the version explicitly. Current supported versions are `0.1.0`, `0.1.1`, `0.2.0`, `0.2.1`, `0.3.0`, and `0.4.0`.
 
 ## Update
 
