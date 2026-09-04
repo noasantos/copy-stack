@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-09-04
+
 ### Added
 
 - First-run onboarding: a 720×520 window that walks through Quick Paste and area capture as live demos inside a MacBook Pro frame, then asks for Accessibility and (optionally) Screen Recording. Permission states update on their own while the window is open — no need to come back and press anything. Fully keyboard-navigable: Return continues, Escape skips setup, ⌘[ goes back.
