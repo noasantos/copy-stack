@@ -8,3 +8,7 @@ DerivedData/
 *.dSYM
 *.zip
 scripts/ExportOptions.plist
+
+# Coverage artefacts
+*.profraw
+*.profdata

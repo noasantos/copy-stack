@@ -40,6 +40,26 @@
 		600000000000000000000032 /* TextCaretResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500000000000000000000032 /* TextCaretResolverTests.swift */; };
 		60000000000000000000001B /* AccessibilityTextCaretLocator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50000000000000000000001E /* AccessibilityTextCaretLocator.swift */; };
 		60000000000000000000001C /* GlobalQuickPasteHotKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50000000000000000000001F /* GlobalQuickPasteHotKey.swift */; };
+		6000000000000000000000A0 /* OnboardingTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5000000000000000000000A0 /* OnboardingTheme.swift */; };
+		6000000000000000000000A1 /* OnboardingModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5000000000000000000000A1 /* OnboardingModel.swift */; };
+		6000000000000000000000A2 /* DemoTimeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5000000000000000000000A2 /* DemoTimeline.swift */; };
+		6000000000000000000000A3 /* MacBookFrame.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5000000000000000000000A3 /* MacBookFrame.swift */; };
+		6000000000000000000000A4 /* DesktopScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5000000000000000000000A4 /* DesktopScene.swift */; };
+		6000000000000000000000A5 /* SceneMenuBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5000000000000000000000A5 /* SceneMenuBar.swift */; };
+		6000000000000000000000A6 /* SceneNotesWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5000000000000000000000A6 /* SceneNotesWindow.swift */; };
+		6000000000000000000000A7 /* SceneQuickPastePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5000000000000000000000A7 /* SceneQuickPastePanel.swift */; };
+		6000000000000000000000A8 /* ScenePopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5000000000000000000000A8 /* ScenePopover.swift */; };
+		6000000000000000000000A9 /* SceneSystemSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5000000000000000000000A9 /* SceneSystemSettings.swift */; };
+		6000000000000000000000AA /* SceneSelectionOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5000000000000000000000AA /* SceneSelectionOverlay.swift */; };
+		6000000000000000000000AB /* OnboardingComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5000000000000000000000AB /* OnboardingComponents.swift */; };
+		6000000000000000000000AC /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5000000000000000000000AC /* OnboardingView.swift */; };
+		6000000000000000000000AD /* OnboardingWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5000000000000000000000AD /* OnboardingWindowController.swift */; };
+		6000000000000000000000AE /* ReauthorizeAccessibilitySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5000000000000000000000AE /* ReauthorizeAccessibilitySheet.swift */; };
+		6000000000000000000000AF /* OnboardingPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5000000000000000000000AF /* OnboardingPreviews.swift */; };
+		6000000000000000000000B0 /* DemoRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5000000000000000000000B0 /* DemoRecorder.swift */; };
+		6000000000000000000000C0 /* Onboarding.strings in Resources */ = {isa = PBXBuildFile; fileRef = 5000000000000000000000C0 /* Onboarding.strings */; };
+		6000000000000000000000D2 /* OnboardingModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5000000000000000000000D2 /* OnboardingModelTests.swift */; };
+		6000000000000000000001D2 /* DemoTimelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5000000000000000000001D2 /* DemoTimelineTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -89,6 +109,26 @@
 		50000000000000000000001F /* GlobalQuickPasteHotKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalQuickPasteHotKey.swift; sourceTree = "<group>"; };
 		50000000000000000000000C /* ClipStack.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ClipStack.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		50000000000000000000000D /* ClipStackTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ClipStackTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		5000000000000000000000A0 /* OnboardingTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingTheme.swift; sourceTree = "<group>"; };
+		5000000000000000000000A1 /* OnboardingModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingModel.swift; sourceTree = "<group>"; };
+		5000000000000000000000A2 /* DemoTimeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoTimeline.swift; sourceTree = "<group>"; };
+		5000000000000000000000A3 /* MacBookFrame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacBookFrame.swift; sourceTree = "<group>"; };
+		5000000000000000000000A4 /* DesktopScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopScene.swift; sourceTree = "<group>"; };
+		5000000000000000000000A5 /* SceneMenuBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneMenuBar.swift; sourceTree = "<group>"; };
+		5000000000000000000000A6 /* SceneNotesWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneNotesWindow.swift; sourceTree = "<group>"; };
+		5000000000000000000000A7 /* SceneQuickPastePanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneQuickPastePanel.swift; sourceTree = "<group>"; };
+		5000000000000000000000A8 /* ScenePopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScenePopover.swift; sourceTree = "<group>"; };
+		5000000000000000000000A9 /* SceneSystemSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneSystemSettings.swift; sourceTree = "<group>"; };
+		5000000000000000000000AA /* SceneSelectionOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneSelectionOverlay.swift; sourceTree = "<group>"; };
+		5000000000000000000000AB /* OnboardingComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingComponents.swift; sourceTree = "<group>"; };
+		5000000000000000000000AC /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		5000000000000000000000AD /* OnboardingWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWindowController.swift; sourceTree = "<group>"; };
+		5000000000000000000000AE /* ReauthorizeAccessibilitySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReauthorizeAccessibilitySheet.swift; sourceTree = "<group>"; };
+		5000000000000000000000AF /* OnboardingPreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingPreviews.swift; sourceTree = "<group>"; };
+		5000000000000000000000B0 /* DemoRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoRecorder.swift; sourceTree = "<group>"; };
+		5000000000000000000000C1 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Onboarding.strings; sourceTree = "<group>"; };
+		5000000000000000000000D2 /* OnboardingModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingModelTests.swift; sourceTree = "<group>"; };
+		5000000000000000000001D2 /* DemoTimelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoTimelineTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -122,6 +162,8 @@
 			isa = PBXGroup;
 			children = (
 				500000000000000000000020 /* Assets.xcassets */,
+				0000000000000000000000A0 /* Onboarding */,
+				5000000000000000000000C0 /* Onboarding.strings */,
 				500000000000000000000001 /* ClipStackApp.swift */,
 				500000000000000000000002 /* AppDelegate.swift */,
 				500000000000000000000003 /* ClipboardMonitor.swift */,
@@ -162,6 +204,8 @@
 				500000000000000000000019 /* ItemSelectionTests.swift */,
 				50000000000000000000001C /* QuickPasteTests.swift */,
 				500000000000000000000032 /* TextCaretResolverTests.swift */,
+				5000000000000000000000D2 /* OnboardingModelTests.swift */,
+				5000000000000000000001D2 /* DemoTimelineTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -173,6 +217,30 @@
 				50000000000000000000000D /* ClipStackTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		0000000000000000000000A0 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				5000000000000000000000A0 /* OnboardingTheme.swift */,
+				5000000000000000000000A1 /* OnboardingModel.swift */,
+				5000000000000000000000A2 /* DemoTimeline.swift */,
+				5000000000000000000000A3 /* MacBookFrame.swift */,
+				5000000000000000000000A4 /* DesktopScene.swift */,
+				5000000000000000000000A5 /* SceneMenuBar.swift */,
+				5000000000000000000000A6 /* SceneNotesWindow.swift */,
+				5000000000000000000000A7 /* SceneQuickPastePanel.swift */,
+				5000000000000000000000A8 /* ScenePopover.swift */,
+				5000000000000000000000A9 /* SceneSystemSettings.swift */,
+				5000000000000000000000AA /* SceneSelectionOverlay.swift */,
+				5000000000000000000000AB /* OnboardingComponents.swift */,
+				5000000000000000000000AC /* OnboardingView.swift */,
+				5000000000000000000000AD /* OnboardingWindowController.swift */,
+				5000000000000000000000AE /* ReauthorizeAccessibilitySheet.swift */,
+				5000000000000000000000AF /* OnboardingPreviews.swift */,
+				5000000000000000000000B0 /* DemoRecorder.swift */,
+			);
+			path = Onboarding;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -257,6 +325,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				600000000000000000000020 /* Assets.xcassets in Resources */,
+				6000000000000000000000C0 /* Onboarding.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -297,6 +366,23 @@
 				60000000000000000000001B /* AccessibilityTextCaretLocator.swift in Sources */,
 				60000000000000000000001C /* GlobalQuickPasteHotKey.swift in Sources */,
 				600000000000000000000018 /* QuickPasteView.swift in Sources */,
+				6000000000000000000000A0 /* OnboardingTheme.swift in Sources */,
+				6000000000000000000000A1 /* OnboardingModel.swift in Sources */,
+				6000000000000000000000A2 /* DemoTimeline.swift in Sources */,
+				6000000000000000000000A3 /* MacBookFrame.swift in Sources */,
+				6000000000000000000000A4 /* DesktopScene.swift in Sources */,
+				6000000000000000000000A5 /* SceneMenuBar.swift in Sources */,
+				6000000000000000000000A6 /* SceneNotesWindow.swift in Sources */,
+				6000000000000000000000A7 /* SceneQuickPastePanel.swift in Sources */,
+				6000000000000000000000A8 /* ScenePopover.swift in Sources */,
+				6000000000000000000000A9 /* SceneSystemSettings.swift in Sources */,
+				6000000000000000000000AA /* SceneSelectionOverlay.swift in Sources */,
+				6000000000000000000000AB /* OnboardingComponents.swift in Sources */,
+				6000000000000000000000AC /* OnboardingView.swift in Sources */,
+				6000000000000000000000AD /* OnboardingWindowController.swift in Sources */,
+				6000000000000000000000AE /* ReauthorizeAccessibilitySheet.swift in Sources */,
+				6000000000000000000000AF /* OnboardingPreviews.swift in Sources */,
+				6000000000000000000000B0 /* DemoRecorder.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -313,6 +399,8 @@
 				600000000000000000000016 /* ItemSelectionTests.swift in Sources */,
 				600000000000000000000019 /* QuickPasteTests.swift in Sources */,
 				600000000000000000000032 /* TextCaretResolverTests.swift in Sources */,
+				6000000000000000000000D2 /* OnboardingModelTests.swift in Sources */,
+				6000000000000000000001D2 /* DemoTimelineTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -325,6 +413,18 @@
 			targetProxy = 700000000000000000000001 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		5000000000000000000000C0 /* Onboarding.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				5000000000000000000000C1 /* en */,
+			);
+			name = Onboarding.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
 
 /* Begin XCBuildConfiguration section */
 		310000000000000000000001 /* Debug */ = {
@@ -460,6 +560,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = "";
@@ -482,6 +583,7 @@
 			buildSettings = {
 				ARCHS = "arm64 x86_64";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				CODE_SIGNING_ALLOWED = YES;

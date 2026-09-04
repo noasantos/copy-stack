@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+### Added
+
+- First-run onboarding: a 720×520 window that walks through Quick Paste and area capture as live demos inside a MacBook Pro frame, then asks for Accessibility and (optionally) Screen Recording. Permission states update on their own while the window is open — no need to come back and press anything. Fully keyboard-navigable: Return continues, Escape skips setup, ⌘[ goes back.
+- Re-authorize sheet: when an update makes macOS drop ClipStack's Accessibility grant, a compact sheet explains the off/on toggle and closes itself as soon as access returns.
+- Screen Recording is requested through the system prompt first, which grants the running app, instead of sending you to System Settings — where turning the toggle on behind a running app makes macOS demand a restart. If the prompt is no longer available because the request was denied before, the step offers a one-click **Relaunch ClipStack** instead of leaving you to quit and reopen by hand.
+
+### Changed
+
+- New app icon and a single accent colour (system blue) used throughout the interface.
+
 ## [0.4.2] - 2026-09-03
 
 ### Fixed

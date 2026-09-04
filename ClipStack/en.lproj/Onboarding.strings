@@ -1,0 +1,76 @@
+/* Welcome */
+"welcome.title" = "Welcome to ClipStack";
+"welcome.promise" = "Your clipboard, always one shortcut away.";
+"welcome.privacy" = "Everything stays on this Mac. No account, no network.";
+
+/* Quick Paste demo */
+"paste.title" = "Paste from anywhere";
+"paste.body.prefix" = "Press";
+"paste.body.suffix" = "while typing to paste a recent item right where you are.";
+"paste.legend.choose" = "Choose";
+"paste.legend.paste" = "Paste";
+"paste.legend.close" = "Close";
+"paste.showEarlier" = "Show %d earlier";
+
+/* Area capture demo */
+"capture.title" = "Capture any part of the screen";
+"capture.body.prefix" = "Press";
+"capture.body.suffix" = "and drag. It’s saved to your Desktop, copied, and kept in history.";
+"capture.confirm.saved" = "Saved to Desktop";
+"capture.confirm.copied" = "Copied";
+"capture.confirm.history" = "Added to history";
+
+/* Accessibility permission */
+"access.title" = "Accessibility Access";
+"access.body" = "ClipStack needs this to find your text cursor and paste into the app you’re using.";
+"access.allow" = "Allow Accessibility Access";
+"access.waiting" = "Waiting — switch back here after turning it on";
+"access.notNow" = "Not now";
+"access.allowed" = "Access Allowed";
+"access.grantedCaption" = "Accessibility access is on";
+"access.skipped" = "Skipped — ⇧⌘V can’t paste into other apps until you allow it in Settings.";
+
+/* Screen Recording permission */
+"screen.title" = "Screen Recording";
+"screen.body" = "Optional — only area capture (⇧⌘S) needs it. Everything else works without it.";
+"screen.allow" = "Allow Screen Recording";
+"screen.waiting" = "Optional · waiting";
+"screen.notNow" = "Not now";
+"screen.allowed" = "Allowed";
+"screen.grantedCaption" = "Screen Recording is on. ⇧⌘S is ready.";
+"screen.relaunch" = "Relaunch ClipStack";
+"screen.relaunchNote" = "Turn it on in Settings, then relaunch to finish.";
+"screen.skipped" = "Skipped — ⇧⌘S won’t capture until you allow it in Settings.";
+
+/* Done */
+"done.title" = "You’re all set";
+"done.body" = "ClipStack is in your menu bar. Two shortcuts to remember:";
+"done.quickPaste" = "Quick Paste";
+"done.captureArea" = "Capture Area";
+"done.cta" = "Start Using ClipStack";
+
+/* Navigation */
+"nav.continue" = "Continue";
+"nav.back" = "Back";
+"nav.skip" = "Skip Setup";
+
+/* Re-authorize sheet */
+"reauth.title" = "Re-authorize Accessibility";
+"reauth.body" = "After the update, macOS turned off ClipStack’s Accessibility access. Turn it back on to keep using Quick Paste (⇧⌘V).";
+"reauth.step1" = "In the Accessibility list, turn ClipStack off.";
+"reauth.step2" = "Then turn it on again.";
+"reauth.note" = "Closes when access is back";
+"reauth.later" = "Later";
+"reauth.open" = "Open Accessibility Settings";
+
+/* Demo scene content (not user-facing strings, shown inside the MacBook) */
+"demo.notes.title" = "Thursday standup";
+"demo.notes.line.prefix" = "Reminder: ";
+"demo.notes.line.suffix" = " — bring the slides.";
+"demo.item.1" = "https://clipstack.app/releases";
+"demo.item.2" = "Q3 roadmap review — Thursday 2 PM";
+"demo.item.3" = "Image (1016×1294)";
+"demo.item.4" = "hello@clipstack.app";
+"demo.item.5" = "# Deploy brief — ARchive API and Worker";
+"demo.item.6" = "Image (1014×1268)";
+"demo.item.captured" = "Image (1180×640)";

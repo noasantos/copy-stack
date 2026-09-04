@@ -20,6 +20,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var downloadsWatcher: DownloadsWatcher?
     private var statusItem: NSStatusItem?
     private var popover: NSPopover?
+    private var onboardingWindow: OnboardingWindowController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         guard !Self.isRunningUnitTests else {
@@ -27,9 +28,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         NSApp.setActivationPolicy(.accessory)
+
+#if DEBUG
+        // `scripts/record-demos.sh` runs the app for its onboarding scenes only.
+        if let outputDirectory = DemoRecorder.requestedOutputDirectory {
+            DemoRecorder.run(outputDirectory: outputDirectory)
+            return
+        }
+#endif
+
         appLogger.info("Accessibility trusted at launch: \(AccessibilityTextCaretLocator.isTrusted(prompt: false))")
         requestNotificationPermission()
         configureStatusItem()
+
+        // Ahead of the folder watchers, whose first access can block on a system prompt. SwiftUI
+        // delivers this callback from `applicationWillFinishLaunching`, so present on the next
+        // pass of the run loop rather than mid-launch.
+        DispatchQueue.main.async { [weak self] in self?.presentFirstRunExperience() }
 
         let clipboardMonitor = ClipboardMonitor(store: store)
         clipboardMonitor.start()
@@ -63,6 +78,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let downloadsWatcher = DownloadsWatcher(store: downloadsStore)
         downloadsWatcher.start()
         self.downloadsWatcher = downloadsWatcher
+    }
+
+    /// First launch after install shows onboarding; an update that dropped the Accessibility grant
+    /// shows the compact re-authorize sheet instead.
+    private func presentFirstRunExperience() {
+        if let controller = OnboardingWindowController.presentIfNeeded() {
+            onboardingWindow = controller
+            return
+        }
+        ReauthorizePresenter.presentIfNeeded()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
