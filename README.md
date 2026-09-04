@@ -1,10 +1,26 @@
+<div align="center">
+
+<img src="docs/media/icon.png" width="104" alt="">
+
 # ClipStack
 
-ClipStack is a free, local-only clipboard manager for the macOS menu bar.
+**A free, local-only clipboard manager for the macOS menu bar.**
+
+Every copy you make, one shortcut away — and nothing ever leaves your Mac.
+
+[![Release](https://img.shields.io/github/v/release/noasantos/copy-stack?color=0A6FE6&label=release)](https://github.com/noasantos/copy-stack/releases)
+[![macOS 13+](https://img.shields.io/badge/macOS-13%2B-111111?logo=apple&logoColor=white)](#install)
+[![Network access](https://img.shields.io/badge/network-none-2E7D32)](#privacy)
+[![License](https://img.shields.io/badge/license-MIT-444444)](LICENSE)
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/media/hero-dark.png">
+  <img src="docs/media/hero-light.png" width="880" alt="ClipStack's clipboard history open from the macOS menu bar">
+</picture>
+
+</div>
 
 ## Install
-
-By default, the installer installs the latest supported ClipStack release.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/noasantos/copy-stack/main/install.sh | bash
@@ -19,6 +35,29 @@ curl -fsSL https://raw.githubusercontent.com/noasantos/copy-stack/main/install.s
 ```
 
 Supported release versions remain installable by passing the version explicitly. Current supported versions are `0.1.0`, `0.1.1`, `0.2.0`, `0.2.1`, `0.3.0`, `0.4.0`, `0.4.1`, and `0.4.2`.
+
+## How it works
+
+**Quick Paste** — `Shift + Command + V` opens your history right at the text cursor, in any app. Arrow keys choose, `Return` pastes.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/media/quick-paste-dark.gif">
+  <img src="docs/media/quick-paste-light.gif" width="880" alt="Quick Paste opening at the text cursor and pasting the selected item">
+</picture>
+
+**Area capture** — `Shift + Command + S` grabs a region of the screen straight into the history. No file to hunt for afterwards.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/media/area-capture-dark.gif">
+  <img src="docs/media/area-capture-light.gif" width="880" alt="Selecting a screen area and the capture landing in the clipboard history">
+</picture>
+
+**The menu bar** — the full history, text and images together, searchable and draggable.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/media/history-popover-dark.png">
+  <img src="docs/media/history-popover-light.png" width="880" alt="The ClipStack popover open in the menu bar">
+</picture>
 
 ## Update
 
