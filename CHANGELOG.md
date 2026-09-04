@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- README demos: the onboarding scenes now double as the project's screenshots. `scripts/record-demos.sh` films them into looping GIFs and MP4s under `docs/media/`.
+
 ## [0.5.0] - 2026-09-04
 
 ### Added

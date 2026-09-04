@@ -66,6 +66,27 @@ This runs `scripts/lint-release.sh` (network API check) then `xcodebuild test`. 
 ./scripts/build.sh 0.x.0
 ```
 
+## Demo media
+
+The README's GIFs and screenshots are the onboarding demo scenes, filmed by the app itself:
+
+```bash
+./scripts/record-demos.sh                # build, record, encode into docs/media/
+SKIP_BUILD=1 ./scripts/record-demos.sh   # re-record without a rebuild
+```
+
+`ClipStack/Onboarding/DemoRecorder.swift` (DEBUG only, entered through `CLIPSTACK_RECORD_DEMOS`)
+hosts each scene in a real window and films one full loop of `DemoTimeline`, so the clips are
+seamless. It captures through ScreenCaptureKit at 60 fps when Screen Recording is granted to
+`build/Debug/ClipStack.app`, and otherwise captures its own window with `CGWindowListCreateImage`,
+which needs no permission because the window belongs to the process — around 25 fps at 1× instead.
+Debug builds are ad-hoc signed, so a rebuild is a new identity to macOS and the grant has to be
+given again; use `SKIP_BUILD=1` to keep it across recordings.
+
+Frame-stepping the scenes with `ImageRenderer` is not an option: it never advances SwiftUI's
+animation clock, so it only ever renders the cue end states. Neither is slowing the clock —
+`layer.speed` has no effect on SwiftUI's implicit animations.
+
 ## PR Guidelines
 
 - **One concern per PR.** Don't bundle unrelated changes.
