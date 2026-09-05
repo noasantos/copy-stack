@@ -5,13 +5,13 @@ set -euo pipefail
 # Installs ClipStack to /Applications without Apple Developer ID signing.
 # Uses ad-hoc codesign + quarantine removal — standard practice for
 # developer tools distributed outside the Mac App Store.
-# Source: https://github.com/noasantos/copy-stack
+# Source: https://github.com/proto-hatchery/copy-stack
 # ──────────────────────────────────────────────────────────────
 
 LATEST_VERSION="0.5.0"   # ← Update this on each release
 VERSION="${CLIPSTACK_VERSION:-${1:-${LATEST_VERSION}}}"
 APP_NAME="ClipStack"
-REPO="noasantos/copy-stack"
+REPO="proto-hatchery/copy-stack"
 ZIP_NAME="${APP_NAME}-${VERSION}.zip"
 DOWNLOAD_URL="https://github.com/${REPO}/releases/download/v${VERSION}/${ZIP_NAME}"
 case "${VERSION}" in

@@ -8,7 +8,7 @@
 
 Every copy you make, one shortcut away — and nothing ever leaves your Mac.
 
-[![Release](https://img.shields.io/github/v/release/noasantos/copy-stack?color=0A6FE6&label=release)](https://github.com/noasantos/copy-stack/releases)
+[![Release](https://img.shields.io/github/v/release/proto-hatchery/copy-stack?color=0A6FE6&label=release)](https://github.com/proto-hatchery/copy-stack/releases)
 [![macOS 13+](https://img.shields.io/badge/macOS-13%2B-111111?logo=apple&logoColor=white)](#install)
 [![Network access](https://img.shields.io/badge/network-none-2E7D32)](#privacy)
 [![License](https://img.shields.io/badge/license-MIT-444444)](LICENSE)
@@ -23,7 +23,7 @@ Every copy you make, one shortcut away — and nothing ever leaves your Mac.
 ## Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/noasantos/copy-stack/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/proto-hatchery/copy-stack/main/install.sh | bash
 ```
 
 Requirements: macOS 13 (Ventura) or later. Apple Silicon and Intel supported.
@@ -31,7 +31,7 @@ Requirements: macOS 13 (Ventura) or later. Apple Silicon and Intel supported.
 Pass a version only when you want a specific release instead of latest:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/noasantos/copy-stack/main/install.sh | bash -s -- 0.1.0
+curl -fsSL https://raw.githubusercontent.com/proto-hatchery/copy-stack/main/install.sh | bash -s -- 0.1.0
 ```
 
 Supported release versions remain installable by passing the version explicitly. Current supported versions are `0.1.0`, `0.1.1`, `0.2.0`, `0.2.1`, `0.3.0`, `0.4.0`, `0.4.1`, and `0.4.2`.
@@ -64,7 +64,7 @@ Supported release versions remain installable by passing the version explicitly.
 Run the installer again. It removes the previous app bundle and installs the latest release.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/noasantos/copy-stack/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/proto-hatchery/copy-stack/main/install.sh | bash
 ```
 
 ## What it does
@@ -96,7 +96,7 @@ The Downloads tray stores no history and does not copy files into ClipStack stor
 ## Uninstall
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/noasantos/copy-stack/main/uninstall.sh | bash
+curl -fsSL https://raw.githubusercontent.com/proto-hatchery/copy-stack/main/uninstall.sh | bash
 ```
 
 Or manually:
@@ -116,7 +116,7 @@ ClipStack is not signed with an Apple Developer ID certificate. Release archives
 Requires Xcode 15+ and macOS 13+.
 
 ```bash
-git clone https://github.com/noasantos/copy-stack
+git clone https://github.com/proto-hatchery/copy-stack
 cd copy-stack
 xcodebuild -scheme ClipStack -configuration Release \
   ONLY_ACTIVE_ARCH=NO ARCHS="arm64 x86_64" build

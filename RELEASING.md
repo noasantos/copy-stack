@@ -39,7 +39,7 @@ git push origin main --tags
 ### 5. Verify install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/noasantos/copy-stack/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/proto-hatchery/copy-stack/main/install.sh | bash
 ```
 
 - [ ] App launches from /Applications
